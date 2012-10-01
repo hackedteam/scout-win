@@ -37,7 +37,8 @@ typedef struct _DEVICE_INFO
 } DEVICE_INFO, *PDEVICE_INFO;
 
 
-VOID GetDeviceInfo();
+PWCHAR GetDeviceInfo();
+BOOL IsX64System();
 
 #endif
 

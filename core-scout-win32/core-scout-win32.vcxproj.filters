@@ -16,12 +16,6 @@
     <Filter Include="Source Files\Agents">
       <UniqueIdentifier>{b71355f3-c926-4fb2-983c-e2b0d6dd51c6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Evidences">
-      <UniqueIdentifier>{b2d03cd3-06c7-4971-931b-351ce2c99fb1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Evidences">
-      <UniqueIdentifier>{9a7857e4-bb9b-43b4-8893-00d3a66e9678}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Crypt">
       <UniqueIdentifier>{19c015f8-84c2-4e96-9896-c3b5d3ca4144}</UniqueIdentifier>
     </Filter>
@@ -57,9 +51,6 @@
     <ClCompile Include="device_agent.cpp">
       <Filter>Source Files\Agents</Filter>
     </ClCompile>
-    <ClCompile Include="ev_files.cpp">
-      <Filter>Source Files\Evidences</Filter>
-    </ClCompile>
     <ClCompile Include="aes_alg.cpp">
       <Filter>Source Files\Crypt</Filter>
     </ClCompile>
@@ -78,6 +69,9 @@
     <ClCompile Include="base64.cpp">
       <Filter>Source Files\Proto</Filter>
     </ClCompile>
+    <ClCompile Include="upgrade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autodelete_batch.h">
@@ -94,9 +88,6 @@
     </ClInclude>
     <ClInclude Include="device_agent.h">
       <Filter>Header Files\Agents</Filter>
-    </ClInclude>
-    <ClInclude Include="ev_files.h">
-      <Filter>Header Files\Evidences</Filter>
     </ClInclude>
     <ClInclude Include="aes_alg.h">
       <Filter>Header Files\Crypt</Filter>
@@ -118,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="base64.h">
       <Filter>Header Files\Proto</Filter>
+    </ClInclude>
+    <ClInclude Include="upgrade.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

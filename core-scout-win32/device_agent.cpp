@@ -5,7 +5,7 @@
 
 
 
-VOID GetDeviceInfo()
+PWCHAR GetDeviceInfo()
 {
 	HKEY hKey;
 	ULONG uLen;
@@ -147,11 +147,41 @@ VOID GetDeviceInfo()
 	else
 		pDeviceInfo->diskinfo.disktotal = pDeviceInfo->diskinfo.diskfree = 0;
 
-	free(wPath);
+
+	PWCHAR pDeviceString = (PWCHAR)malloc(sizeof(DEVICE_INFO) + 1024);
+	wsprintf(pDeviceString,
+		L"Processor: %d x %s\n"
+		L"Memory: %dMB free / %dMB total (%u%% used)\n"
+		L"Disk: %dMB free / %dMB total\n"
+		L"\n"
+		L"OS Version: %s%s%s%s%s\n"
+		L"Registered to: %s%s%s%s {%s}\n"
+		L"Locale settings: %s_%s (UTC %+.2d:%.2d)\n"
+		L"\n"
+		L"User: %s%s%s%s%s\n"
+		L"SID: %s", 
+		pDeviceInfo->procinfo.procnum, pDeviceInfo->procinfo.proc,
+		pDeviceInfo->meminfo.memfree, pDeviceInfo->meminfo.memtotal, pDeviceInfo->meminfo.memload,
+		pDeviceInfo->diskinfo.diskfree, pDeviceInfo->diskinfo.disktotal,
+		pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", IsX64System() ? L" (64bit)" : L" (32bit)",
+		pDeviceInfo->osinfo.owner, (pDeviceInfo->osinfo.org[0]) ? L" (" : L"", (pDeviceInfo->osinfo.org[0]) ? pDeviceInfo->osinfo.org : L"", (pDeviceInfo->osinfo.org[0]) ? L")" : L"", pDeviceInfo->osinfo.id,
+		pDeviceInfo->localinfo.lang, pDeviceInfo->localinfo.country, (-1 * (int)pDeviceInfo->localinfo.timebias) / 60, abs((int)pDeviceInfo->localinfo.timebias) % 60,
+		pDeviceInfo->userinfo.username, (pDeviceInfo->userinfo.fullname[0]) ? L" (" : L"", (pDeviceInfo->userinfo.fullname[0]) ? pDeviceInfo->userinfo.fullname : L"", (pDeviceInfo->userinfo.fullname[0]) ? L")" : L"", (pDeviceInfo->userinfo.priv) ? ((pDeviceInfo->userinfo.priv == 1) ? L"" : L" {ADMIN}") : L" {GUEST}",
+		pDeviceInfo->userinfo.sid);
+
+
 	free(pDeviceInfo);
+	free(wPath);
+	return pDeviceString;
 }
 
-VOID BuildDeviceBuffer()
-{
+BOOL IsX64System()
+{    
+    SYSTEM_INFO SysInfo;
 
+	GetNativeSystemInfo(&SysInfo);
+	if(SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
+		return FALSE;
+
+	return TRUE;
 }

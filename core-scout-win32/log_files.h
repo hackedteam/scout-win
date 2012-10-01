@@ -3,7 +3,8 @@
 
 HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditionalLen);
 PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditionalLen, PULONG uOutLen);
-
+BOOL WriteLogFile(HANDLE hFile, PBYTE pBuffer, ULONG uBuffLen);
+VOID ProcessEvidenceFiles();
 
 #define BLOCK_LEN 16
 

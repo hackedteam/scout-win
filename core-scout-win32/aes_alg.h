@@ -61,7 +61,12 @@ extern "C" {
 		unsigned char *input,
 		unsigned char *output,
 		int len );
-
+	unsigned long aes_cbc_encrypt_pkcs5( aes_context *ctx,
+		unsigned char iv[16],
+		unsigned char *input,
+		unsigned char *output,
+		int len );
+	
 	/**
 	* \brief          AES-CBC buffer decryption
 	*

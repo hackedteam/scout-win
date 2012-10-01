@@ -791,6 +791,40 @@ void aes_cbc_encrypt( aes_context *ctx,
 	}
 }
 
+#include <stdlib.h>
+unsigned long aes_cbc_encrypt_pkcs5(aes_context *ctx,
+	unsigned char iv[16],
+	unsigned char *input,
+	unsigned char *output,
+	int len )
+{
+	unsigned long pad_len;
+	unsigned char *padded_input;
+
+	if (len % 16)
+	{
+		pad_len = 16 - (len % 16);
+		padded_input = (unsigned char *)malloc(len + pad_len);
+		memcpy(padded_input, input, len);
+
+		for (unsigned int x=len; x < pad_len + len; x++)
+			padded_input[x] = (unsigned char)pad_len;
+	}
+	else
+	{
+		pad_len = 16;
+		padded_input = (unsigned char *)malloc(len + pad_len);
+		memcpy(padded_input, input, len);
+
+		memset(&padded_input[len], 0x10, 16);
+	}
+
+	aes_cbc_encrypt(ctx, iv, padded_input, output, len + pad_len);
+	free(padded_input);
+
+	return len + pad_len;
+}
+
 /*
 * AES-CBC buffer decryption
 */

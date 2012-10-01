@@ -3,15 +3,15 @@
 
 #define KEY_LEN 16
 
-#ifdef _DEBUG
+#ifdef _DEBUG_BINPATCH
 #define CLIENT_KEY			"4yeN5zu0+il3Jtcb5a1sBcAdjYFcsD9z"	// per server (auth)
-#define ENCRYPTION_KEY		"3j9WmmDgBqyU270FTid3719g64bP4s52"	// for log
+#define ENCRYPTION_KEY		"i6gMR84bxvQovzbhtV-if0SdPMu359ax"	// for log
 #define ENCRYPTION_KEY_CONF "uX-o0BOIkiyOyVXH4L3FYhbai-CvMU-_"	// for conf e sha1
-						     
 #define BACKDOOR_ID			"RCS_0000001167"					// castore "poveri"
 #define SYNC_INTERVAL		5000
-#define SYNC_SERVER			"rcs-castore"
 #define DEMO_TAG			"hxVtdxJ/Z8LvK3ULSnKRUmLE"
+#define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"
+#define SYNC_SERVER			"rcs-castore"
 #else
 #define CLIENT_KEY			"ANgs9oGFnEL_vxTxe9eIyBx5lZxfd6QZ"
 #define ENCRYPTION_KEY		"WfClq6HxbSaOuJGaH5kWXr7dQgjYNSNg"
@@ -19,6 +19,7 @@
 #define BACKDOOR_ID			"EMp7Ca7-fpOBIr"
 #define SYNC_INTERVAL		5000
 #define DEMO_TAG			"Pg-WaVyPzMMMMmGbhP6qAigT"
+#define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"
 #define SYNC_SERVER			"SYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNC"
 #endif
 
