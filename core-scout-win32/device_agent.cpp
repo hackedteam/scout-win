@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <Lm.h>
 #include <Sddl.h>
+#include <stdio.h>
 #include "device_agent.h"
 
 
@@ -148,18 +149,33 @@ PWCHAR GetDeviceInfo()
 		pDeviceInfo->diskinfo.disktotal = pDeviceInfo->diskinfo.diskfree = 0;
 
 
-	PWCHAR pDeviceString = (PWCHAR)malloc(sizeof(DEVICE_INFO) + 1024);
-	wsprintf(pDeviceString,
+	BOOL bIsWow64;
+	IsWow64Process(GetCurrentProcess(), &bIsWow64);
+
+	PWCHAR pApplicationList = GetApplicationList(FALSE);
+	PWCHAR pApplicationList64 = NULL;
+	if (bIsWow64)
+		pApplicationList64 = GetApplicationList(TRUE);
+
+	PWCHAR pDeviceString = (PWCHAR)malloc(sizeof(DEVICE_INFO)
+		+ wcslen(pApplicationList) * sizeof(WCHAR) 
+		+ (pApplicationList64 ? wcslen(pApplicationList64) * sizeof(WCHAR) : 0)
+		+ 1024);
+
+	_snwprintf_s(pDeviceString,
+		sizeof(DEVICE_INFO)/sizeof(WCHAR) + wcslen(pApplicationList) +  (pApplicationList64 ? wcslen(pApplicationList64) : 0) + 1024/sizeof(WCHAR),
+		_TRUNCATE,
 		L"Processor: %d x %s\n"
 		L"Memory: %dMB free / %dMB total (%u%% used)\n"
 		L"Disk: %dMB free / %dMB total\n"
 		L"\n"
 		L"OS Version: %s%s%s%s%s\n"
 		L"Registered to: %s%s%s%s {%s}\n"
-		L"Locale settings: %s_%s (UTC %+.2d:%.2d)\n"
+		L"Locale settings: %s_%s (UTC %.2d:%.2d)\n"
 		L"\n"
 		L"User: %s%s%s%s%s\n"
-		L"SID: %s", 
+		L"SID: %s\n"
+		L"\nApplication List (x86):\n%s\nApplicationList (x64):\n%s",
 		pDeviceInfo->procinfo.procnum, pDeviceInfo->procinfo.proc,
 		pDeviceInfo->meminfo.memfree, pDeviceInfo->meminfo.memtotal, pDeviceInfo->meminfo.memload,
 		pDeviceInfo->diskinfo.diskfree, pDeviceInfo->diskinfo.disktotal,
@@ -167,12 +183,89 @@ PWCHAR GetDeviceInfo()
 		pDeviceInfo->osinfo.owner, (pDeviceInfo->osinfo.org[0]) ? L" (" : L"", (pDeviceInfo->osinfo.org[0]) ? pDeviceInfo->osinfo.org : L"", (pDeviceInfo->osinfo.org[0]) ? L")" : L"", pDeviceInfo->osinfo.id,
 		pDeviceInfo->localinfo.lang, pDeviceInfo->localinfo.country, (-1 * (int)pDeviceInfo->localinfo.timebias) / 60, abs((int)pDeviceInfo->localinfo.timebias) % 60,
 		pDeviceInfo->userinfo.username, (pDeviceInfo->userinfo.fullname[0]) ? L" (" : L"", (pDeviceInfo->userinfo.fullname[0]) ? pDeviceInfo->userinfo.fullname : L"", (pDeviceInfo->userinfo.fullname[0]) ? L")" : L"", (pDeviceInfo->userinfo.priv) ? ((pDeviceInfo->userinfo.priv == 1) ? L"" : L" {ADMIN}") : L" {GUEST}",
-		pDeviceInfo->userinfo.sid);
+		pDeviceInfo->userinfo.sid,
+		pApplicationList,
+		pApplicationList64 ? pApplicationList64 : L"");
 
-
+	
+	free(pApplicationList);
+	free(pApplicationList64);
 	free(pDeviceInfo);
 	free(wPath);
 	return pDeviceString;
+}
+
+PWCHAR GetApplicationList(BOOL bX64View)
+{
+	ULONG uLen, uIndex, uVal, uAppList;
+	HKEY hKeyUninstall, hKeyProgram;
+	WCHAR pStringValue[128], pProduct[256];
+	PWCHAR pApplicationList = NULL;
+
+	
+	uLen = uIndex = 0;
+	hKeyUninstall = hKeyProgram = NULL;
+
+	ULONG uSamDesidered = KEY_READ;
+	if (bX64View)
+		uSamDesidered |= KEY_WOW64_64KEY;
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", 0, uSamDesidered, &hKeyUninstall) == ERROR_SUCCESS)
+	{
+		while (1)
+		{
+			if (hKeyProgram)
+			{
+				RegCloseKey(hKeyProgram);
+				hKeyProgram = NULL;
+			}
+
+			uLen = sizeof(pStringValue) / sizeof(WCHAR);
+			if (RegEnumKeyEx(hKeyUninstall, uIndex++, pStringValue, &uLen, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+				break;
+
+ 			if (RegOpenKeyEx(hKeyUninstall, pStringValue, 0, uSamDesidered, &hKeyProgram) != ERROR_SUCCESS)
+				continue;
+
+			if (!RegQueryValueEx(hKeyProgram, L"ParentKeyName", NULL, NULL, NULL, NULL))
+				continue;
+
+			// no windows security essential without this.
+			uLen = sizeof(ULONG);
+			if (!RegQueryValueEx(hKeyProgram, L"SystemComponent", NULL, NULL, (PBYTE)&uVal, &uLen) && (uVal == 1))
+				continue;
+
+			uLen = sizeof(pStringValue);
+			if (RegQueryValueEx(hKeyProgram, L"DisplayName", NULL, NULL, (PBYTE)pStringValue, &uLen) != ERROR_SUCCESS)
+				continue;
+
+			wcsncpy_s(pProduct, sizeof(pProduct) / sizeof(WCHAR), pStringValue, _TRUNCATE);
+
+			uLen = sizeof(pStringValue);
+			if (!RegQueryValueEx(hKeyProgram, L"DisplayVersion", NULL, NULL, (PBYTE)pStringValue, &uLen))
+			{
+				wcsncat_s(pProduct, sizeof(pProduct) / sizeof(WCHAR), L"   (", _TRUNCATE);
+				wcsncat_s(pProduct, sizeof(pProduct) / sizeof(WCHAR), pStringValue, _TRUNCATE);
+				wcsncat_s(pProduct, sizeof(pProduct) / sizeof(WCHAR), L")", _TRUNCATE);
+			}
+			wcsncat_s(pProduct, sizeof(pProduct) / sizeof(WCHAR), L"\n", _TRUNCATE);
+
+			if (!pApplicationList)
+			{
+ 				uAppList = wcslen(pProduct)*sizeof(WCHAR) + sizeof(WCHAR);
+				pApplicationList = (PWCHAR)realloc(NULL,  uAppList);
+				memset(pApplicationList, 0x0, uAppList);
+			}
+			else
+			{
+				uAppList = wcslen(pApplicationList)*sizeof(WCHAR) + wcslen(pProduct)*sizeof(WCHAR) + sizeof(WCHAR);
+				pApplicationList = (PWCHAR)realloc(pApplicationList, uAppList);
+			}
+			wcsncat_s(pApplicationList, uAppList / sizeof(WCHAR), pProduct, wcslen(pProduct));
+		}
+	}
+
+	return pApplicationList;
 }
 
 BOOL IsX64System()

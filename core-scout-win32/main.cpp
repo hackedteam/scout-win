@@ -27,6 +27,11 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 #endif
 	}
 
+	// FIXME: TODO: GetLastInputInfo 
+
+	// FIXME: verificare e zappare i wprintf che non supportano > 1024 byte di buffah
+	// FIXME: verificare il ritorno di tutte le WinHttpSendRequest & GetResponse senno' sbomba, no?!
+	// FIXME: upgrade
 	HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SyncThreadFunction, NULL, 0, NULL);
 	WaitForSingleObject(hThread, INFINITE);
 }

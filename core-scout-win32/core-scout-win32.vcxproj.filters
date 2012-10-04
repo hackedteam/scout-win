@@ -72,6 +72,9 @@
     <ClCompile Include="upgrade.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="crypt.cc">
+      <Filter>Source Files\Crypt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autodelete_batch.h">
@@ -112,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="upgrade.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crypt.h">
+      <Filter>Header Files\Crypt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

