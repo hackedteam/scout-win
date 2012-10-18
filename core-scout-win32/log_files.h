@@ -1,12 +1,11 @@
 #ifndef _LOG_FILES_H
 #define _LOG_FILES_H
 
-HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditionalLen);
+//HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditionalLen);
+HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditionalLen, BOOL bCreateFile, PBYTE *pOutBuffer, PULONG uOutLen);
 PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditionalLen, PULONG uOutLen);
 BOOL WriteLogFile(HANDLE hFile, PBYTE pBuffer, ULONG uBuffLen);
 VOID ProcessEvidenceFiles();
-
-#define BLOCK_LEN 16
 
 //
 // Struttura dei log file

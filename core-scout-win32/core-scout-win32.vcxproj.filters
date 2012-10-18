@@ -37,6 +37,12 @@
     <Filter Include="Source Files\Proto">
       <UniqueIdentifier>{509d7f5a-84e3-46ae-ba91-0e60b8550c5e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Api">
+      <UniqueIdentifier>{3f94caa3-6982-4b33-9811-28fff3ef9ce0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Api">
+      <UniqueIdentifier>{02e52dbd-f37a-4f55-98a7-af232542d6c1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -47,9 +53,6 @@
     </ClCompile>
     <ClCompile Include="win_http.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="device_agent.cpp">
-      <Filter>Source Files\Agents</Filter>
     </ClCompile>
     <ClCompile Include="aes_alg.cpp">
       <Filter>Source Files\Crypt</Filter>
@@ -75,6 +78,15 @@
     <ClCompile Include="crypt.cc">
       <Filter>Source Files\Crypt</Filter>
     </ClCompile>
+    <ClCompile Include="agent_device.cpp">
+      <Filter>Source Files\Agents</Filter>
+    </ClCompile>
+    <ClCompile Include="agent_screenshot.cpp">
+      <Filter>Source Files\Agents</Filter>
+    </ClCompile>
+    <ClCompile Include="api.cpp">
+      <Filter>Source Files\Api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autodelete_batch.h">
@@ -88,9 +100,6 @@
     </ClInclude>
     <ClInclude Include="win_http.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="device_agent.h">
-      <Filter>Header Files\Agents</Filter>
     </ClInclude>
     <ClInclude Include="aes_alg.h">
       <Filter>Header Files\Crypt</Filter>
@@ -118,6 +127,15 @@
     </ClInclude>
     <ClInclude Include="crypt.h">
       <Filter>Header Files\Crypt</Filter>
+    </ClInclude>
+    <ClInclude Include="agent_device.h">
+      <Filter>Header Files\Agents</Filter>
+    </ClInclude>
+    <ClInclude Include="agent_screenshot.h">
+      <Filter>Header Files\Agents</Filter>
+    </ClInclude>
+    <ClInclude Include="api.h">
+      <Filter>Header Files\Api</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

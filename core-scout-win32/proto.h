@@ -16,7 +16,9 @@
 
 
 // evidences tag
-#define PM_DEVICEINFO         0x0240
+//#define PM_DEVICEINFO         0x0240
+#define PM_DEVICEINFO	0xfff1
+#define PM_SCREENSHOT	0xfff2		
 
 typedef struct _PROTO_COMMAND_AUTH
 {

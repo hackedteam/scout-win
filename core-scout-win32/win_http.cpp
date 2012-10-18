@@ -204,7 +204,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	if (!(hConnect = WinHttpConnect(hSession, (LPCWSTR)_wHost, INTERNET_DEFAULT_HTTP_PORT, 0)))
 		return FALSE;
 
-	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", L"/scout", NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
+	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", L"/", NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHttpOpenRequest FAILED\n");
@@ -227,7 +227,7 @@ BOOL ResolveName(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen)
 
 #ifdef _DEBUG
 	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
-	swprintf_s((wchar_t *)pDebugString, 1024, L"[*] ResolveName resolvingt: %S\n", pServerUrl);
+	swprintf_s((wchar_t *)pDebugString, 1024, L"[*] ResolveName resolving: %S\n", pServerUrl);
 	OutputDebugString(pDebugString);
 	free(pDebugString);
 #endif
@@ -262,4 +262,35 @@ BOOL ResolveName(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen)
 	_snprintf_s((PCHAR)pAddrToConnect, uBufLen, _TRUNCATE, "%s", pAddrPtr);
 
 	return TRUE;
+}
+
+
+VOID WinHTTPClose()
+{
+	if (hSession)
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[+] Closing hSession\n");
+#endif
+	}
+	hSession = NULL;
+
+	if (hGlobalInternet)
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[+] Closing hGlobalInternet\n");
+#endif
+		WinHttpCloseHandle(hGlobalInternet);
+	}
+	hGlobalInternet = NULL;
+
+	if (hConnect)
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[+] Closing hConnect\n");
+#endif
+		WinHttpCloseHandle(hConnect);
+	}
+	hConnect = NULL;
+
 }
