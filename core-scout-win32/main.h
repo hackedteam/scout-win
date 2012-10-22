@@ -9,6 +9,7 @@
 VOID WaitForInput();
 VOID UseLess();
 VOID DeleteAndDie();
+VOID Drop();
 
 
 

