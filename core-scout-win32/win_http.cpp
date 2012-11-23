@@ -65,10 +65,10 @@ PBYTE WinHTTPGetResponse(PULONG uOut)
 BOOL WinHTTPSendData(PBYTE pBuffer, ULONG uBuffLen)
 {
 #ifdef _DEBUG
-	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
-	swprintf_s((wchar_t *)pDebugString, 1024, L"[+] Sending %08x byte of request\n", uBuffLen);
-	OutputDebugString(pDebugString);
-	free(pDebugString);
+//	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
+//	swprintf_s((wchar_t *)pDebugString, 1024, L"[+] Sending %08x byte of request\n", uBuffLen);
+//	OutputDebugString(pDebugString);
+//	free(pDebugString);
 #endif
 	BOOL ret;
 	WCHAR pContentLength[1024];

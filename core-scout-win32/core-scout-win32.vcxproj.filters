@@ -43,6 +43,18 @@
     <Filter Include="Source Files\Api">
       <UniqueIdentifier>{02e52dbd-f37a-4f55-98a7-af232542d6c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\MemoryLoader">
+      <UniqueIdentifier>{be49b96d-3120-4987-a0d2-9bceac9f5a07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MemoryLoader">
+      <UniqueIdentifier>{7387265c-08f3-48cf-a150-1bead3e1a15a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BITS">
+      <UniqueIdentifier>{9b28dbb8-61fc-4e93-bc1f-93c25c30af5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BITS">
+      <UniqueIdentifier>{a124e195-4fda-4c75-9106-f177d5884990}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -86,6 +98,12 @@
     </ClCompile>
     <ClCompile Include="api.cpp">
       <Filter>Source Files\Api</Filter>
+    </ClCompile>
+    <ClCompile Include="bits.cpp">
+      <Filter>Source Files\BITS</Filter>
+    </ClCompile>
+    <ClCompile Include="ldr.cpp">
+      <Filter>Source Files\MemoryLoader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -136,6 +154,12 @@
     </ClInclude>
     <ClInclude Include="api.h">
       <Filter>Header Files\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="ldr.h">
+      <Filter>Header Files\MemoryLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="bits.h">
+      <Filter>Header Files\BITS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

