@@ -33,7 +33,7 @@ BOOL bSync = FALSE;
 HANDLE hScoutSharedMemory;
 
 //#pragma comment(linker, "/EXPORT:MyConf=?MyConf@@YAXXZ")
-__declspec(dllexport) PWCHAR MyConf(PULONG pSynchro)
+__declspec(dllexport) PWCHAR MyConf(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
@@ -41,9 +41,7 @@ __declspec(dllexport) PWCHAR MyConf(PULONG pSynchro)
 	uMelted = TRUE;
 	uSynchro = pSynchro;
 
-	//PWCHAR pScoutName = (PWCHAR)malloc(strlen(SCOUT_NAME)*sizeof(WCHAR) + 2*sizeof(WCHAR));
 	PWCHAR pScoutName = (PWCHAR)VirtualAlloc(NULL, strlen(SCOUT_NAME)*sizeof(WCHAR) + 2*sizeof(WCHAR), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	//_snwprintf_s(pScoutName, strlen(SCOUT_NAME)+2, _TRUNCATE, L"%S", SCOUT_NAME);
 	MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, SCOUT_NAME, strlen(SCOUT_NAME), pScoutName, strlen(SCOUT_NAME) + 2);
 
 	return pScoutName;
