@@ -234,7 +234,7 @@ BOOL MemoryLoader(LPBYTE lpRawBuffer)
 	PIMAGE_SECTION_HEADER sections = CALC_OFFSET(PIMAGE_SECTION_HEADER, lpAddress, header_size);
 
 	for(USHORT i = 0; i < pe_header.FileHeader.NumberOfSections; i++, sections++)
-		{
+	{
 		LPVOID lpSectionBuffer = CALC_OFFSET(LPVOID, lpAddress, sections->VirtualAddress);
 	
 		if ((sections->Characteristics & IMAGE_SCN_MEM_EXECUTE) == IMAGE_SCN_MEM_EXECUTE)

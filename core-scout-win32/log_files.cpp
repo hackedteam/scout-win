@@ -73,7 +73,7 @@ VOID ProcessEvidenceFiles()
 
 		BOOL bFileSent = FALSE;
 		HANDLE hFile = CreateFile(pFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-		if (hFile)
+		if (hFile != INVALID_HANDLE_VALUE)
 		{
 			ULONG uFileSize = GetFileSize(hFile, NULL);
 			if (uFileSize != INVALID_FILE_SIZE)

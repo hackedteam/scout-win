@@ -46,8 +46,6 @@ VOID SyncThreadFunction()
 			if (!bLastSync)
 				OutputDebugString(L"[!!] Sync FAILED\n");
 #endif
-
-			WinHTTPClose();
 		}
 		else
 		{
@@ -56,12 +54,13 @@ VOID SyncThreadFunction()
 #endif
 			bLastSync = FALSE;
 		}
+
+		WinHTTPClose();
 			
 		if (bLastSync)
 			MySleep(WAIT_SUCCESS_SYNC);
 		else
 			MySleep(WAIT_FAIL_SYNC);
-
 	}
 }
 

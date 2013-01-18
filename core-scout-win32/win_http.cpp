@@ -272,6 +272,7 @@ VOID WinHTTPClose()
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Closing hSession\n");
 #endif
+		WinHttpCloseHandle(hSession);
 	}
 	hSession = NULL;
 
