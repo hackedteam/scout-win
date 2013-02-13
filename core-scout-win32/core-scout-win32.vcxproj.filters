@@ -55,6 +55,12 @@
     <Filter Include="Header Files\BITS">
       <UniqueIdentifier>{a124e195-4fda-4c75-9106-f177d5884990}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Agents\Social">
+      <UniqueIdentifier>{1ccdd465-013d-46b6-b22a-82db3e49c332}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Agents\Social">
+      <UniqueIdentifier>{77ab4de1-b5c3-40d9-b763-78113174e01c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -104,6 +110,9 @@
     </ClCompile>
     <ClCompile Include="ldr.cpp">
       <Filter>Source Files\MemoryLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="agent_social.cpp">
+      <Filter>Source Files\Agents</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,5 +170,13 @@
     <ClInclude Include="bits.h">
       <Filter>Header Files\BITS</Filter>
     </ClInclude>
+    <ClInclude Include="agent_social.h">
+      <Filter>Header Files\Agents</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

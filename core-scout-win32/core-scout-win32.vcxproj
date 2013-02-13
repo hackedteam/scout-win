@@ -89,6 +89,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Pre-Release|Win32'">
@@ -107,6 +108,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -125,8 +127,12 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
+      <ModuleDefinitionFile>
+      </ModuleDefinitionFile>
+      <StripPrivateSymbols>
+      </StripPrivateSymbols>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-NoSleep|Win32'">
@@ -147,10 +153,12 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
+      <ModuleDefinitionFile>exports.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="aes_alg.cpp" />
+    <ClCompile Include="agent_social.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="base64.cpp" />
     <ClCompile Include="bits.cpp" />
@@ -169,6 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aes_alg.h" />
+    <ClInclude Include="agent_social.h" />
     <ClInclude Include="api.h" />
     <ClInclude Include="autodelete_batch.h" />
     <ClInclude Include="base64.h" />
@@ -186,6 +195,9 @@
     <ClInclude Include="sync_thread.h" />
     <ClInclude Include="upgrade.h" />
     <ClInclude Include="win_http.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
