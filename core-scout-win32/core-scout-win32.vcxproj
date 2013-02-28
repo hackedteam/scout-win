@@ -133,6 +133,8 @@
       </ModuleDefinitionFile>
       <StripPrivateSymbols>
       </StripPrivateSymbols>
+      <OutputFile>$(OutDir)MODUNAME.exe</OutputFile>
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-NoSleep|Win32'">

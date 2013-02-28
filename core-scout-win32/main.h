@@ -30,9 +30,4 @@ PWCHAR GetMySelfName();
 PWCHAR GetTemp();
 
 
-
-
-
-
-
 #endif

