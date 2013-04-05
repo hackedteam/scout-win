@@ -192,6 +192,7 @@ VOID UseLess()
 		memset(CLIENT_KEY, 0x0, 3);
 		memset(ENCRYPTION_KEY_CONF, 0x0, 3);
 		memset(SCOUT_NAME, 0x0, 3);
+		memset(SCREENSHOT_FLAG, 0x0, 4);
 	}
 }
 

