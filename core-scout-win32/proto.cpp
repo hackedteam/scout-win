@@ -161,7 +161,7 @@ BOOL SendEvidences()
 //	else
 //		OutputDebugString(L"[*] No DeviceInfo\n");
 #endif
-	__asm int 3;
+
 	// SCREENSHOT
 	if (*(PULONG)SCREENSHOT_FLAG == 0)
 	{
