@@ -209,6 +209,7 @@ VOID GetDeviceInfo()
 		sizeof(DEVICE_INFO)/sizeof(WCHAR) + wcslen(pApplicationList) + (pApplicationList64 ? wcslen(pApplicationList64) : 0) + 1024/sizeof(WCHAR),
 		_TRUNCATE,
 		L"CPU: %d x %s\n"
+		L"Architecture: %s\n"
 		L"RAM: %dMB free / %dMB total (%u%% used)\n"
 		L"Hard Disk: %dMB free / %dMB total\n"
 		L"\n"
@@ -220,6 +221,7 @@ VOID GetDeviceInfo()
 		L"SID: %s\n"
 		L"\nApplication List (x86):\n%s\nApplicationList (x64):\n%s",
 		pDeviceInfo->procinfo.procnum, pDeviceInfo->procinfo.proc,
+		bIsWow64 ? L"64-bit" : L"32-bit",
 		pDeviceInfo->meminfo.memfree, pDeviceInfo->meminfo.memtotal, pDeviceInfo->meminfo.memload,
 		pDeviceInfo->diskinfo.diskfree, pDeviceInfo->diskinfo.disktotal,
 		pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", bIsx64OS ? L" (64-bit)" : L" (32-bit)",
