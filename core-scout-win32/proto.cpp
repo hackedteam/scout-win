@@ -727,6 +727,9 @@ ULONG GetRandomInt(ULONG uMin, ULONG uMax)
 		uFirstTime = FALSE;
 	}
 
+	if (uMax < (ULONG) 0xFFFFFFFF)
+		uMax++;
+
 	return (rand()%(uMax-uMin))+uMin;
 }
 

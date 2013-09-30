@@ -44,7 +44,7 @@ typedef struct _DEVICE_CONTAINER
 
 VOID GetDeviceInfo();
 PWCHAR GetApplicationList(BOOL bX64View);
-BOOL IsX64System();
+VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS);
 
 #endif
 

