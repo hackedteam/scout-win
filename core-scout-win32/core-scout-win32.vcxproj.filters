@@ -114,6 +114,9 @@
     <ClCompile Include="agent_social.cpp">
       <Filter>Source Files\Agents</Filter>
     </ClCompile>
+    <ClCompile Include="agent_webcam.cpp">
+      <Filter>Source Files\Agents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="autodelete_batch.h">
@@ -171,6 +174,9 @@
       <Filter>Header Files\BITS</Filter>
     </ClInclude>
     <ClInclude Include="agent_social.h">
+      <Filter>Header Files\Agents</Filter>
+    </ClInclude>
+    <ClInclude Include="qedit.h">
       <Filter>Header Files\Agents</Filter>
     </ClInclude>
   </ItemGroup>

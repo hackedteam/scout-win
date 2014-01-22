@@ -132,7 +132,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -203,6 +203,7 @@
   <ItemGroup>
     <ClCompile Include="aes_alg.cpp" />
     <ClCompile Include="agent_social.cpp" />
+    <ClCompile Include="agent_webcam.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="base64.cpp" />
     <ClCompile Include="bits.cpp" />
@@ -235,6 +236,7 @@
     <ClInclude Include="main.h" />
     <ClInclude Include="md5.h" />
     <ClInclude Include="proto.h" />
+    <ClInclude Include="qedit.h" />
     <ClInclude Include="sha1.h" />
     <ClInclude Include="sync_thread.h" />
     <ClInclude Include="upgrade.h" />

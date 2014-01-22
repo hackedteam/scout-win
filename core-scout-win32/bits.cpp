@@ -8,6 +8,7 @@ using namespace std;
 
 VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 {
+	/*
 	IBackgroundCopyManager* g_XferManager = NULL;  
 	HRESULT hr;
 
@@ -109,6 +110,6 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 	CloseHandle(hTimer);
 
 	//MessageBox(NULL, L"DONE", L"BUBU", 0);
-
+	*/
 	return;
 }

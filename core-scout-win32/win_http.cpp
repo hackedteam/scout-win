@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include <Winhttp.h>
 #include <stdio.h>
-
 #include "win_http.h"
 
 HINTERNET hGlobalInternet = 0;

