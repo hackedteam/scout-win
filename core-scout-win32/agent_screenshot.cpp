@@ -101,7 +101,8 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 		return NULL;
 	}
 
-	if (GetEncoderClsid(L"image/jpeg", &encoderClsid) == -1) {
+	WCHAR strJPEG[] = { L'i', L'm', L'a', L'g', L'e', L'/', L'j', L'p', L'e', L'g', L'\0' };
+	if (GetEncoderClsid(strJPEG, &encoderClsid) == -1) {
 		GdiplusShutdown(gdiplusToken);
 		CoUninitialize();
 #ifdef _DEBUG
@@ -140,10 +141,12 @@ PBYTE JpgConvert(BYTE *dataptr, DWORD imageSize, DWORD *sizeDst, DWORD quality)
 	}
 	
 	
+	CHAR strGlobalFree[] = { 'G', 'l', 'o', 'b', 'a', 'l', 'F', 'r', 'e', 'e', 0x0 };
+	CHAR strCreateStreamOnHGlobal[] = { 'C', 'r', 'e', 'a', 't', 'e', 'S', 't', 'r', 'e', 'a', 'm', 'O', 'n', 'H', 'G', 'l', 'o', 'b', 'a', 'l', 0x0 };
 	CopyMemory(pBuffer, dataptr, imageSize);
-	CreateStreamOnHGlobal_p fpCreateStreamOnHGlobal = (CreateStreamOnHGlobal_p) GetProcAddress(LoadLibrary(L"ole32"), "CreateStreamOnHGlobal");
+	CreateStreamOnHGlobal_p fpCreateStreamOnHGlobal = (CreateStreamOnHGlobal_p) GetProcAddress(LoadLibrary(L"ole32"), strCreateStreamOnHGlobal);
 
-	GlobalFree_p fpGlobalFree = (GlobalFree_p) GetProcAddress(LoadLibrary(L"kernel32"), "GlobalFree");
+	GlobalFree_p fpGlobalFree = (GlobalFree_p) GetProcAddress(LoadLibrary(L"kernel32"), strGlobalFree);
     if (fpCreateStreamOnHGlobal(hBuffer, FALSE, &pStream) == S_OK) 
 	{
 		image = new Image(pStream);
