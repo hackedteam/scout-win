@@ -1,0 +1,21 @@
+﻿Build started 24/03/2014 11:43:05.
+     1>Project "D:\sources\AutoScoutTests\Updater\Updater.vcxproj" on node 2 (Build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\Updater.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /Gm /MTd /GS- /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt Updater.cpp
+         Updater.cpp
+       Link:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\sources\AutoScoutTests\Debug\Updater.exe" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\Updater.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"D:\sources\AutoScoutTests\Debug\Updater.pdb" /ORDER:@"FUNC_ORDER.txt" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\sources\AutoScoutTests\Debug\Updater.lib" /MACHINE:X86 Debug\main.obj
+         Debug\Updater.obj
+         Updater.vcxproj -> D:\sources\AutoScoutTests\Debug\Updater.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"D:\sources\AutoScoutTests\Debug\Updater.exe;#1" /manifest Debug\Updater.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Debug\Updater.unsuccessfulbuild".
+         Touching "Debug\Updater.lastbuildstate".
+     1>Done Building Project "D:\sources\AutoScoutTests\Updater\Updater.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.01

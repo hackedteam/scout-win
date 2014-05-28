@@ -1,0 +1,61 @@
+﻿Build started 22/05/2014 15:12:41.
+     1>Project "D:\sources\AutoScoutTests\AutoScoutTests\AutoScoutTests.vcxproj" on node 2 (Build target(s)).
+       Project file contains ToolsVersion="12.0". This toolset may be unknown or missing, in which case you may be able to resolve this by installing the appropriate version of MSBuild, or the build may have been forced to a particular ToolsVersion for policy reasons. Treating the project as if it had ToolsVersion="4.0". For more information, please see http://go.microsoft.com/fwlink/?LinkId=291333.
+     1>InitializeBuildStatus:
+         Creating "Debug\AutoScoutTests.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D _CRT_SECURE_NO_WARNINGS /D _UNICODE /D UNICODE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt proto.cpp
+         proto.cpp
+         All outputs are up-to-date.
+       Link:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\sources\AutoScoutTests\Debug\AutoScoutTests.exe" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\AutoScoutTests.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"D:\sources\AutoScoutTests\Debug\AutoScoutTests.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\sources\AutoScoutTests\Debug\AutoScoutTests.lib" /MACHINE:X86 Debug\aes.obj
+         Debug\antivm.obj
+         Debug\base64.obj
+         Debug\camera.obj
+         Debug\chrome_cookies.obj
+         Debug\chrome_password.obj
+         Debug\clipboard.obj
+         Debug\conf.obj
+         Debug\cookies.obj
+         Debug\crypt.obj
+         Debug\debug.obj
+         Debug\device.obj
+         Debug\download.obj
+         Debug\facebook.obj
+         Debug\ffox_password.obj
+         Debug\filesystem.obj
+         Debug\firefox_cookies.obj
+         Debug\gmail.obj
+         Debug\ie_cookies.obj
+         Debug\ie_password.obj
+         Debug\JSON.obj
+         Debug\JSONValue.obj
+         Debug\loader.obj
+         Debug\md5.obj
+         Debug\password.obj
+         Debug\position.obj
+         Debug\proto.obj
+         Debug\screenshot.obj
+         Debug\sha1.obj
+         Debug\social.obj
+         Debug\sqlite.obj
+         Debug\sync_thread.obj
+         Debug\export.obj
+         Debug\main.obj
+         Debug\mayhem.obj
+         Debug\upgrade.obj
+         Debug\utils.obj
+         Debug\winhttp.obj
+         Debug\zmem.obj
+         LINK : D:\sources\AutoScoutTests\Debug\AutoScoutTests.exe not found or not built by the last incremental link; performing full link
+         AutoScoutTests.vcxproj -> D:\sources\AutoScoutTests\Debug\AutoScoutTests.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"D:\sources\AutoScoutTests\Debug\AutoScoutTests.exe;#1" /manifest Debug\AutoScoutTests.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Debug\AutoScoutTests.unsuccessfulbuild".
+         Touching "Debug\AutoScoutTests.lastbuildstate".
+     1>Done Building Project "D:\sources\AutoScoutTests\AutoScoutTests\AutoScoutTests.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.60

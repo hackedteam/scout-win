@@ -1,0 +1,15 @@
+#ifndef _ANTIVM_H
+#define _ANTIVM_H
+
+#include <Windows.h>
+#define VMWARE_WORKSTATION_FAIL		"\x76\x6f\x73\x08\xb2\x72\x45\x1a\x87\x51\x30\x18\xc9\x88\x7c\xaa\x60\x75\x3c\x34" // "2d 94 e0 88 ff dc f3 45" -> unicode
+#define VMWARE_WORKSTATION_FAIL2	"\x44\xb0\x73\xdc\x0d\x9d\x4c\x84\xd6\x13\x32\xe2\x70\x98\xc0\xf6\x67\x20\xe8\x0d" // "4e 60 5c 00 41 b6 4f f1 " -> unicode
+#define VBOX_FAIL					"\xee\xfb\x15\x51\x37\xa9\xa2\x67\x39\x4b\x9e\x9f\xa3\x05\x5f\xf0\xde\x09\xa4\xa7" // "PCI\\VEN_80EE&DEV_CAFE"	-> unicode
+
+
+BOOL AntiVM();
+VOID AntiCuckoo();
+BOOL AntiVMWare();
+BOOL AntiVBox();
+
+#endif
