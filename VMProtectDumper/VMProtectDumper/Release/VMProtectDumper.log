@@ -1,0 +1,24 @@
+﻿Build started 21/02/2014 17:40:48.
+     1>Project "c:\Users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\VMProtectDumper\VMProtectDumper.vcxproj" on node 2 (Build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Release\VMProtectDumper.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _UNICODE /D UNICODE /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt VMProtectDumper.cpp
+         VMProtectDumper.cpp
+       Link:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"c:\users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\Release\VMProtectDumper.exe" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\VMProtectDumper.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"c:\users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\Release\VMProtectDumper.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"c:\users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\Release\VMProtectDumper.lib" /MACHINE:X86 Release\VMProtectDumper.obj
+         Generating code
+     1>c:\users\guido3\documents\visual studio 2012\projects\vmprotectdumper\vmprotectdumper\vmprotectdumper.cpp(78): warning C4715: 'HandleBreakPoint' : not all control paths return a value
+     1>c:\users\guido3\documents\visual studio 2012\projects\vmprotectdumper\vmprotectdumper\vmprotectdumper.cpp(99): warning C4715: 'HandleException' : not all control paths return a value
+         Finished generating code
+         VMProtectDumper.vcxproj -> c:\users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\Release\VMProtectDumper.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"c:\users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\Release\VMProtectDumper.exe;#1" /manifest Release\VMProtectDumper.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Release\VMProtectDumper.unsuccessfulbuild".
+         Touching "Release\VMProtectDumper.lastbuildstate".
+     1>Done Building Project "c:\Users\guido3\documents\visual studio 2012\Projects\VMProtectDumper\VMProtectDumper\VMProtectDumper.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.75

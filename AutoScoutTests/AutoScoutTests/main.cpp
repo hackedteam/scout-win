@@ -136,7 +136,7 @@ VOID MemoryWatchDog()
 	IWbemServices *pSvc=0;
 	WCHAR strQuery[200] = { L'\0' };
 	WCHAR strRootCIM[] = { L'R', L'O', L'O', L'T', L'\\', L'C', L'I', L'M', L'V', L'2', L'\0' };
-	WCHAR strFormat[] = { L's', L'e', L'l', L'e', L'c', L't', L' ', L'*', L' ', L'f', L'r', L'o', L'm', L' ', L'W', L'i', L'n', L'3', L'2', L'_', L'P', L'e', L'r', L'f', L'F', L'o', L'r', L'm', L'a', L't', L't', L'e', L'd', L'D', L'a', L't', L'a', L'_', L'P', L'e', L'r', L'f', L'P', L'r', L'o', L'c', L'_', L'P', L'r', L'o', L'c', L'e', L's', L's', L' ', L'W', L'H', L'E', L'R', L'E', L' ', L'N', L'a', L'm', L'e', L' ', L'L', L'I', L'K', L'E', L' ', L'"', L'%', L'S', L'%', L'%', L'"', L'\0' };
+	WCHAR strFormat[] = { L's', L'e', L'l', L'e', L'c', L't', L' ', L'*', L' ', L'f', L'r', L'o', L'm', L' ', L'W', L'i', L'n', L'3', L'2', L'_', L'P', L'e', L'r', L'f', L'F', L'o', L'r', L'm', L'a', L't', L't', L'e', L'd', L'D', L'a', L't', L'a', L'_', L'P', L'e', L'r', L'f', L'P', L'r', L'o', L'c', L'_', L'P', L'r', L'o', L'c', L'e', L's', L's', L' ', L'W', L'H', L'E', L'R', L'E', L' ', L'I', L'D', L'P', L'r', L'o', L'c', L'e', L's', L's', L' ', L'=', L' ', L'%', L'd', L'\0' };
 
 	CoInitializeEx(0, COINIT_MULTITHREADED|COINIT_DISABLE_OLE1DDE);
 	CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_DEFAULT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE,NULL);
@@ -177,7 +177,7 @@ VOID MemoryWatchDog()
 		return;
 	}
 
-	_snwprintf_s(strQuery, 200, _TRUNCATE, strFormat, SCOUT_NAME); 
+	_snwprintf_s(strQuery, 200, _TRUNCATE, strFormat, GetCurrentProcessId()); 
 	while (1)
 	{
 		VARIANT vVariant;
