@@ -1,0 +1,1 @@
+VOID BitTransfer(PWCHAR pSource, PWCHAR pDest);
