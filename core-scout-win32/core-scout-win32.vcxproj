@@ -151,7 +151,7 @@
       </ModuleDefinitionFile>
       <StripPrivateSymbols>
       </StripPrivateSymbols>
-      <OutputFile>$(OutDir)MODUNAME.exe</OutputFile>
+      <OutputFile>$(OutDir)\core-scout-win32.exe</OutputFile>
       <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
