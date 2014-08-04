@@ -461,14 +461,14 @@ PCHAR GetScoutSharedMemoryName()
 {
 	//CHAR strFormat[] = { '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '\0' };
 	CHAR strFormat[] = { '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '\0' };
-	PCHAR pName = (PCHAR) malloc(16);
-	memset(pName, 0x0, 16);
+	PCHAR pName = (PCHAR) malloc(20);
+	memset(pName, 0x0, 20);
 
 	_snprintf_s(pName, 
-		16, 
+		20, 
 		_TRUNCATE, 
 		strFormat, 		
-		pServerKey[5], pServerKey[6], pServerKey[5], pServerKey[4], pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0], pServerKey[2]);
+		pServerKey[5], pServerKey[6], pServerKey[5], pServerKey[3], pServerKey[4], pServerKey[2], pServerKey[1], pServerKey[0], pServerKey[2]);		
 		//pServerKey[5], pServerKey[6], pServerKey[5], pServerKey[4], pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0]);
 
 	return pName;
