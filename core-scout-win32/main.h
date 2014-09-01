@@ -3,7 +3,7 @@
 
 #include "binpatched_vars.h"
 
-//#define SCOUT_VERSION 7
+#define SCOUT_VERSION 8
 #define SHARED_MEMORY_WRITE_SIZE 4096
 
 VOID MySleep(ULONG uTime);

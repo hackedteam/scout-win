@@ -50,6 +50,9 @@ PBYTE WinHTTPGetResponse(PULONG uOut)
 	{
 		if (!WinHttpReadData(hGlobalInternet, pHttpResponseBuffer + *uOut, uContentLength, &uRead))
 		{
+			//fixed (non veniva deallocato il buffer in caso di errore)
+			free(pHttpResponseBuffer);
+
 #ifdef _DEBUG
 			OutputDebugString(L"[!!] WinHttpReadData FAIL\n");
 #endif
