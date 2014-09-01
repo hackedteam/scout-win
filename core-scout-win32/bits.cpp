@@ -10,6 +10,7 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 {
 	IBackgroundCopyManager* g_XferManager = NULL;  
 	HRESULT hr = S_OK;
+	HANDLE hTimer = NULL;
 
 	//hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	if (SUCCEEDED(hr))
@@ -51,7 +52,7 @@ VOID BitTransfer(PWCHAR pSource, PWCHAR pDest)
 	//MessageBox(NULL, L"Started", L"BUBU", 0);
 
 	BG_JOB_STATE State;
-	HANDLE hTimer = NULL;
+	//HANDLE hTimer = NULL;
 	LARGE_INTEGER liDueTime;
 
 	liDueTime.QuadPart = -10000000;  //Poll every 1 second

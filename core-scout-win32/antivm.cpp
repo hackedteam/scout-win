@@ -139,5 +139,3 @@ BOOL AntiVBox()
 
 	return bVBoxFound;
 }
-
-

