@@ -76,3 +76,25 @@ BOOL ExecQuerySearchEntryHash(IWbemServices *pSvc, LPWSTR strQuery, LPWSTR strFi
 
 	return bFound;
 }
+
+
+LPBYTE GetRandomData(__in DWORD dwBuffLen)
+{
+	LPBYTE lpBuffer = (LPBYTE) malloc(dwBuffLen);
+	AppendRandomData(lpBuffer, dwBuffLen);
+	return lpBuffer;
+}
+
+VOID AppendRandomData(PBYTE pBuffer, DWORD uBuffLen)
+{
+	DWORD i;
+	static BOOL uFirstTime = TRUE;
+
+	if (uFirstTime) {
+		srand(GetTickCount());
+		uFirstTime = FALSE;
+	}
+
+	for (i=0; i<uBuffLen; i++)
+		pBuffer[i] = rand();
+}

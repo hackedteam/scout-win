@@ -229,6 +229,7 @@ ren ..\Release\MODUNAME.exe scout</Command>
     <ClCompile Include="upgrade.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="win_http.cpp" />
+    <ClCompile Include="zmem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aes_alg.h" />
@@ -255,6 +256,7 @@ ren ..\Release\MODUNAME.exe scout</Command>
     <ClInclude Include="utils.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="win_http.h" />
+    <ClInclude Include="zmem.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

