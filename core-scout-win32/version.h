@@ -1,7 +1,7 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
-#define BUILD_VERSION 9
+#define BUILD_VERSION 10
 
 /* 
 	BATCH_FILE HISTORY
@@ -11,9 +11,9 @@
 	76833.bat	
 */
 
-#define BATCH_FILE_1  "437890.bat"	//DeleteAndDie			in file main.cpp
-#define BATCH_FILE_2  "124904.bat"	//CreateDeleteBatch		in file main.cpp
-#define BATCH_FILE_3  "391294.bat"	//CreateReplaceBatch	in file main.cpp
+#define BATCH_FILE_1  L"437890.bat"	//DeleteAndDie			in file main.cpp
+#define BATCH_FILE_2  L"124904.bat"	//CreateDeleteBatch		in file main.cpp
+#define BATCH_FILE_3  L"391294.bat"	//CreateReplaceBatch	in file main.cpp
 
 /* 
 	USER_AGENT HISTORY

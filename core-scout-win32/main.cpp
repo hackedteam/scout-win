@@ -760,7 +760,7 @@ VOID CreateReplaceBatch(PWCHAR pOldFile, PWCHAR pNewFile, PWCHAR *pBatchOutName)
 	do
 	{
 		//_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d76833.bat", pTempPath, uTick++);
-		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d%s.bat", pTempPath, uTick++, BATCH_FILE_3);
+		_snwprintf_s(pBatchName, 32766, _TRUNCATE, L"%s\\%d%s", pTempPath, uTick++, BATCH_FILE_3);
 		hFile = CreateFile(pBatchName, GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (hFile && hFile != INVALID_HANDLE_VALUE)
 			break;
