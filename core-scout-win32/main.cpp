@@ -98,7 +98,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	
 	if (GetCurrentThread() == 0x0)
 	{
-		MessageBox(NULL, L"Formatting bios", L"Owning PCI bus", 0);
+		MessageBox(NULL, L"Error", L"wrong commandline arguments", 0);
 		return 0;
 	}
 
@@ -230,7 +230,7 @@ VOID Drop()
 		_snwprintf_s(strDestFileName, strlen(SCOUT_NAME)+5, _TRUNCATE, strExeFormat, SCOUT_NAME);
 
 		if (GetCurrentThread() == 0x0)
-			MessageBox(NULL, L"Hey there!", L"Look ma, no thread id! \\o/", 1);
+			MessageBox(NULL, L"Warning", L"Trying to recover..", 1);
 
 		BOOL bFileExists = FALSE;
 		BitTransfer(strSourcePath, strDestPath);
@@ -333,7 +333,7 @@ VOID UseLess()
 {
 	if (GetCurrentProcessId() == 4) 
 	{
-		MessageBox(NULL, L"Updating CPU microcode", L"Please insert a disk in drive A:", 0);
+		MessageBox(NULL, L"Error", L"Aborting now", 0);
 
 		memset(DEMO_TAG, 0x0, 3);
 		memset(WMARKER, 0x0, 3);
