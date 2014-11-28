@@ -74,7 +74,8 @@ PULONG	uSynchro;
 (RCS 9.4)	eflmakfil
 */
 
-__declspec(dllexport) PWCHAR wkufidexp(PULONG pSynchro) // questa viene richiamata dai meltati
+
+PWCHAR hardreset(PULONG pSynchro) // questa viene richiamata dai meltati
 {
 #ifdef _DEBUG
 	OutputDebugString(L"[+] Setting uMelted to TRUE\n");

@@ -1,2 +1,3 @@
 EXPORTS
-	wkufidexp @1 NONAME PRIVATE
+	hardreset @1   PRIVATE
+	
