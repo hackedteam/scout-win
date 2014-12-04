@@ -253,6 +253,8 @@ VOID GetDeviceInfo()
 	return;
 }
 
+
+/*
 PWCHAR GetApplicationList(BOOL bX64View)
 {
 	ULONG uLen, uIndex, uVal, uAppList;
@@ -338,7 +340,7 @@ PWCHAR GetApplicationList(BOOL bX64View)
 	return pApplicationList;
 }
 
-VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS) 
+VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS)
 {   
     //SYSTEM_INFO SysInfo;
 	
@@ -352,16 +354,17 @@ VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS)
 	
 	*bIsx64OS = *bIsWow64; // lo scout e' a 32, quindi se e' wow64 siamo su x64
 	
-	/*
-	IsWow64Process(GetCurrentProcess(), &bIsx64OS);
-	typedef VOID (WINAPI *GetNativeSystemInfo_p)(LPSYSTEM_INFO);
-	GetNativeSystemInfo_p fpGetNativeSystemInfo = (GetNativeSystemInfo_p) GetProcAddress(LoadLibrary(strKernel32), strGetNativeSystemInfo);
-	fpGetNativeSystemInfo(&SysInfo);
 	
-	if(SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
-		*bIsx64OS = FALSE;
-	else
-		*bIsx64OS = TRUE;
-	*/
+	//IsWow64Process(GetCurrentProcess(), &bIsx64OS);
+	//typedef VOID (WINAPI *GetNativeSystemInfo_p)(LPSYSTEM_INFO);
+	//GetNativeSystemInfo_p fpGetNativeSystemInfo = (GetNativeSystemInfo_p) GetProcAddress(LoadLibrary(strKernel32), strGetNativeSystemInfo);
+	//fpGetNativeSystemInfo(&SysInfo);
+	//
+	//if(SysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
+	//	*bIsx64OS = FALSE;
+	//else
+	//	*bIsx64OS = TRUE;
+	
 	return;
 }
+*/

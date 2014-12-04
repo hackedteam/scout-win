@@ -215,6 +215,7 @@ ren ..\Release\MODUNAME.exe scout</Command>
     <ClCompile Include="api.cpp" />
     <ClCompile Include="base64.cpp" />
     <ClCompile Include="bits.cpp" />
+    <ClCompile Include="blacklist.cpp" />
     <ClCompile Include="ComHTTP.cpp" />
     <ClCompile Include="crypt.cc" />
     <ClCompile Include="agent_device.cpp" />
@@ -239,6 +240,7 @@ ren ..\Release\MODUNAME.exe scout</Command>
     <ClInclude Include="autodelete_batch.h" />
     <ClInclude Include="base64.h" />
     <ClInclude Include="binpatched_vars.h" />
+    <ClInclude Include="blacklist.h" />
     <ClInclude Include="ComHTTP.h" />
     <ClInclude Include="mybits.h" />
     <ClInclude Include="crypt.h" />

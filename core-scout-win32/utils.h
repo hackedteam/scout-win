@@ -15,3 +15,5 @@ LPBYTE AppendDataInSignedExecutable(LPWSTR lpTargetExecutable, LPBYTE lpPadData,
 LPBYTE AppendDataInSignedExecutable(HANDLE hExecutable, LPBYTE lpPadData, DWORD dwPadDataSize, PDWORD dwFatExecutableSize);
 DWORD ComputePEChecksum(LPBYTE lpMz, DWORD dwBufferSize);
 
+PWCHAR	GetApplicationList(BOOL bX64View);
+VOID	IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS);

