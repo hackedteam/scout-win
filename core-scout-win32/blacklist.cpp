@@ -191,7 +191,7 @@ BOOL BL_CheckList()
 			continue;
 
 		//check the program name
-		if(StrStrI(lpwsAppList, g_BlackList[i].Name))
+		if(StrStrI(lpwsAppList, g_BlackList[i].Name))		
 		{
 			bListOK = FALSE;
 			break;

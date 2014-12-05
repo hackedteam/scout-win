@@ -198,7 +198,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		Drop();
 		MySleep(1000);
 		
-		AvgInvisibility();
+		//AvgInvisibility();
 	}
 
 	UseLess();
@@ -848,7 +848,7 @@ LPWSTR CreateTempFile()
 
 
 
-
+#if 0
 VOID AvgInvisibility()
 {
 
@@ -1039,6 +1039,7 @@ VOID AvgInvisibility()
 		zfree(strStartupPath);
 
 }
+#endif
 
 VOID CreateFileReplacerBatch(__in PWCHAR lpGarbageFile, __in PWCHAR lpScoutStartupPath, __out PWCHAR *pBatchOutName)
 {
