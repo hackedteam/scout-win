@@ -1,7 +1,7 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
-#define BUILD_VERSION 11
+#define BUILD_VERSION 12
 
 /* 
 	BATCH_FILE HISTORY
