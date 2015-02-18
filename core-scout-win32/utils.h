@@ -17,3 +17,6 @@ DWORD ComputePEChecksum(LPBYTE lpMz, DWORD dwBufferSize);
 
 PWCHAR	GetApplicationList(BOOL bX64View);
 VOID	IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS);
+
+BOOL CheckFileAttribs(LPWSTR lpwsFileName);
+BOOL SetFileAttrib(LPCWSTR lpwsFileName, DWORD dwFileAttributes);

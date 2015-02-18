@@ -352,3 +352,38 @@ VOID IsX64System(PBOOL bIsWow64, PBOOL bIsx64OS)
 	*/
 	return;
 }
+
+//set the attributes of a file
+BOOL SetFileAttrib(LPCWSTR lpwsFileName, DWORD dwFileAttributes)
+{
+	DWORD dwRet;
+
+    dwRet = GetFileAttributes(lpwsFileName); 
+    if(dwRet == INVALID_FILE_ATTRIBUTES)
+		return FALSE;
+
+	return SetFileAttributes(lpwsFileName, dwRet | dwFileAttributes);     
+}
+
+
+//check if the read-only flag is set and eventually unset it
+BOOL CheckFileAttribs(LPWSTR lpwsFileName)
+{
+	DWORD dwRet;
+
+	//get the file attributes
+	dwRet = GetFileAttributes(lpwsFileName);
+	if(dwRet == INVALID_FILE_ATTRIBUTES)
+		return TRUE;
+
+	if(!(dwRet & FILE_ATTRIBUTE_READONLY))
+		return TRUE;
+
+	#ifdef _DEBUG		
+		OutputDebugString(L"The file is read-only\r\n");
+		OutputDebugString(lpwsFileName);
+		OutputDebugString(L"\r\n");
+	#endif
+
+	return SetFileAttributes(lpwsFileName, dwRet & (~FILE_ATTRIBUTE_READONLY));
+}
