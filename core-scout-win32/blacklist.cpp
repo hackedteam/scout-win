@@ -81,8 +81,11 @@ OS_TYPE BL_GetOSVersion(LPWSTR *lpwsOSName)
 		SysFreeString(bRootCIM);
 
 		//release com objs
-		pSvc->Release();
-		pLoc->Release();
+		if(pSvc)
+			pSvc->Release();
+		if(pLoc)
+			pLoc->Release();
+
 		pSvc = NULL;
 		pLoc = NULL;
 	}
