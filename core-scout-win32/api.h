@@ -1,5 +1,67 @@
 #ifndef _API_H
 #define _API_H
+
+#include <windows.h>
+#include <Winhttp.h>
+
+// todo: fix case
+/* WinHTTP */
+typedef BOOL (WINAPI *WINHTTPSENDREQUEST)(_In_ HINTERNET hRequest, _In_opt_  LPCWSTR pwszHeaders, _In_ DWORD dwHeadersLength,_In_opt_  LPVOID lpOptional,  _In_ DWORD dwOptionalLength, _In_ DWORD dwTotalLength,_In_ DWORD_PTR dwContext);
+typedef BOOL (WINAPI *WINHTTPGETIEPROXYCONFIGFORCURRENTUSER)(_Inout_  WINHTTP_CURRENT_USER_IE_PROXY_CONFIG *pProxyConfig);
+typedef BOOL (WINAPI *WINHTTPSETOPTION)(_In_  HINTERNET hInternet, _In_  DWORD dwOption, _In_  LPVOID lpBuffer, _In_  DWORD dwBufferLength);
+typedef BOOL (WINAPI *WINHTTPSETTIMEOUTS)(_In_  HINTERNET hInternet,_In_  int dwResolveTimeout,_In_  int dwConnectTimeout, _In_  int dwSendTimeout, _In_  int dwReceiveTimeout);
+typedef BOOL (WINAPI *WINHTTPRECEIVERESPONSE)(_In_ HINTERNET hRequest, LPVOID lpReserved);
+typedef HINTERNET (WINAPI *WINHTTPCONNECT)(_In_ HINTERNET hSession,_In_ LPCWSTR pswzServerName,_In_ INTERNET_PORT nServerPort,DWORD dwReserved);
+typedef HINTERNET (WINAPI *WINHTTPOPEN)(_In_opt_ LPCWSTR pwszUserAgent,_In_ DWORD dwAccessType, _In_ LPCWSTR pwszProxyName, _In_ LPCWSTR pwszProxyBypass, _In_ DWORD dwFlags);
+typedef HINTERNET (WINAPI *WINHTTPOPENREQUEST)(_In_  HINTERNET hConnect, _In_  LPCWSTR pwszVerb, _In_  LPCWSTR pwszObjectName, _In_  LPCWSTR pwszVersion, _In_  LPCWSTR pwszReferrer, _In_  LPCWSTR *ppwszAcceptTypes, _In_  DWORD dwFlags);
+typedef BOOL (WINAPI *WINHTTPGETPROXYFORURL)(_In_   HINTERNET hSession, _In_   LPCWSTR lpcwszUrl, _In_   WINHTTP_AUTOPROXY_OPTIONS *pAutoProxyOptions, _Out_  WINHTTP_PROXY_INFO *pProxyInfo);
+typedef BOOL (WINAPI *WINHTTPREADDATA)(_In_   HINTERNET hRequest, _Out_  LPVOID lpBuffer, _In_   DWORD dwNumberOfBytesToRead, _Out_  LPDWORD lpdwNumberOfBytesRead);
+typedef BOOL (WINAPI *WINHTTPCLOSEHANDLE)(_In_  HINTERNET hInternet);
+typedef BOOL (WINAPI *WINHTTPQUERYHEADERS)(_In_      HINTERNET hRequest,_In_      DWORD dwInfoLevel, _In_opt_  LPCWSTR pwszName, _Out_     LPVOID lpBuffer,  _Inout_   LPDWORD lpdwBufferLength,  _Inout_   LPDWORD lpdwIndex);
+
+typedef struct _DYNAMIC_WINHTTP
+{
+	WINHTTPSENDREQUEST fpWinHttpSendRequest;
+	WINHTTPGETIEPROXYCONFIGFORCURRENTUSER fpWinhttpgetieproxyconfigforcurrentuser;
+	WINHTTPSETOPTION fpWinhttpsetoption;
+	WINHTTPSETTIMEOUTS fpWinhttpsettimeouts;
+	WINHTTPRECEIVERESPONSE fpWinhttpreceiveresponse;
+	WINHTTPCONNECT fpWinhttpconnect;
+	WINHTTPOPEN fpWinhttpopen;
+	WINHTTPOPENREQUEST fpWinhttpopenrequest;
+	WINHTTPGETPROXYFORURL fpWinhttpgetproxyforurl;
+	WINHTTPREADDATA fpWinhttpreaddata;
+	WINHTTPCLOSEHANDLE fpWinhttpclosehandle;
+	WINHTTPQUERYHEADERS fpWinhttpqueryheaders;
+
+} DYNAMIC_WINHTTP, *PDYNAMIC_WINHTTP;
+
+
+/* Winsock */
+typedef int (*WSASTARTUP)( _In_   WORD wVersionRequested, _Out_  LPWSADATA lpWSAData); //WSAStartup
+//typedef unsigned long (*INET_ADDR)(_In_  const char *cp); // inet_addr        
+typedef unsigned long (PASCAL FAR *INET_ADDR)(__in const char FAR * cp); //inet_addr
+//typedef struct hostent* FAR (*GETHOSTBYNAME)(_In_  const char *name); //gethostbyname
+typedef struct hostent FAR * (PASCAL FAR *GETHOSTBYNAME)(const char FAR * name);
+typedef char* FAR (*INET_NTOA)( _In_  struct   in_addr in); //  inet_ntoa
+typedef int (*WSACLEANUP)(void); //WSACleanup
+typedef u_long (PASCAL FAR *NTOHL)(_In_  u_long netlong);
+//typedef u_long (*NTOHL)(_In_  u_long netlong); //ntohl
+
+
+typedef struct _DYNAMIC_WINSOCK
+{
+	WSASTARTUP fpWSAStartup;
+	WSACLEANUP fpWSACleanup;
+	INET_ADDR fpinet_addr;
+	GETHOSTBYNAME fpgethostbyname;
+	INET_NTOA fpinet_ntoa;
+	NTOHL fpntohl;
+} DYNAMIC_WINSOCK, *PDYNAMIC_WINSOCK;
+
+BOOL API_LoadWinsock(PDYNAMIC_WINSOCK* pDynamicWinsock);
+BOOL API_LoadWinHttp(PDYNAMIC_WINHTTP* pDynamicWinHttp);
+
 /*
 #include <Winhttp.h>
 #include <Lm.h>

