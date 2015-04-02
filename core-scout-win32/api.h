@@ -3,6 +3,9 @@
 
 #include <windows.h>
 #include <Winhttp.h>
+#include <ShellAPI.h>
+#include <ShTypes.h>
+#include <ShObjIdl.h>
 
 // todo: fix case
 /* WinHTTP */
@@ -59,8 +62,24 @@ typedef struct _DYNAMIC_WINSOCK
 	NTOHL fpntohl;
 } DYNAMIC_WINSOCK, *PDYNAMIC_WINSOCK;
 
+
+/* Shell32 */
+//typedef unsigned long (PASCAL FAR *SHCreateShellItem)(__in const char FAR * cp); //inet_addr
+typedef HRESULT (STDAPICALLTYPE *SHCREATESHELLITEM)(__in_opt PCIDLIST_ABSOLUTE pidlParent, __in_opt IShellFolder *psfParent, __in PCUITEMID_CHILD pidl, __out IShellItem **ppsi);
+typedef HRESULT (STDAPICALLTYPE *SHPARSEDISPLAYNAME)(__in PCWSTR pszName, __in_opt IBindCtx *pbc, __deref_out PIDLIST_ABSOLUTE *ppidl, __in SFGAOF sfgaoIn, __out_opt SFGAOF *psfgaoOut);
+typedef BOOL    (STDAPICALLTYPE *SHGETSPECIALFOLDERPATHW)(__reserved HWND hwnd, __out_ecount(MAX_PATH) LPWSTR pszPath, __in int csidl, __in BOOL fCreate);
+
+typedef struct _DYNAMIC_SHELL32
+{
+	SHCREATESHELLITEM		fpSHCreateShellItem;
+	SHPARSEDISPLAYNAME		fpSHParseDisplayName;
+	SHGETSPECIALFOLDERPATHW fpSHGetSpecialFolderPathW;
+} DYNAMIC_SHELL32, *PDYNAMIC_SHELL32;
+
+
 BOOL API_LoadWinsock(PDYNAMIC_WINSOCK* pDynamicWinsock);
 BOOL API_LoadWinHttp(PDYNAMIC_WINHTTP* pDynamicWinHttp);
+BOOL API_LoadShell32(PDYNAMIC_SHELL32* pDynamicShell32);
 
 /*
 #include <Winhttp.h>

@@ -2,6 +2,7 @@
 
 PDYNAMIC_WINHTTP dynamicWinHttp = NULL;
 PDYNAMIC_WINSOCK dynamicWinsock = NULL;
+PDYNAMIC_SHELL32 dynamicShell32 = NULL;
 
 BOOL API_LoadWinsock(PDYNAMIC_WINSOCK* pDynamicWinsock)
 {
@@ -111,6 +112,41 @@ BOOL API_LoadWinHttp(PDYNAMIC_WINHTTP* pDynamicWinHttp)
 			return FALSE;
 		else
 			return TRUE;
+	}
+	return FALSE;
+}
+
+
+BOOL API_LoadShell32(PDYNAMIC_SHELL32* pDynamicShell32)
+{
+	PDYNAMIC_SHELL32 dynamicShell32 = *pDynamicShell32;
+
+	if  (dynamicShell32)
+	{
+		WCHAR strLib[] = {'S', 'H', 'E', 'L', 'L', '3', '2', 0x0};
+		HMODULE hMod = NULL;
+		
+		if((hMod = LoadLibrary(strLib)) == NULL)
+			return FALSE;
+	
+		CHAR strSHCreateShellItem[] = {'S',  'H',  'C',  'r',  'e',  'a',  't',  'e',  'S',  'h', 'e',  'l',  'l',  'I',  't',  'e',  'm', 0x0};
+		dynamicShell32->fpSHCreateShellItem = (SHCREATESHELLITEM)GetProcAddress(hMod, strSHCreateShellItem);
+
+		CHAR strSHParseDisplayName[] = {'S',  'H',  'P',  'a',  'r',  's',  'e',  'D',  'i',  's', 'p',  'l',  'a',  'y',  'N',  'a', 'm', 'e', 0x0};
+		dynamicShell32->fpSHParseDisplayName = (SHPARSEDISPLAYNAME)GetProcAddress(hMod, strSHParseDisplayName);
+		
+		CHAR strSHGetSpecialFolderPathW[] = {'S',  'H',  'G',  'e',  't',  'S',  'p',  'e',  'c',  'i', 'a',  'l',  'F',  'o',  'l',  'd', 'e', 'r', 'P', 'a', 't', 'h', 'W', 0x0};
+		dynamicShell32->fpSHGetSpecialFolderPathW = (SHGETSPECIALFOLDERPATHW)GetProcAddress(hMod, strSHGetSpecialFolderPathW);
+
+
+		if (
+			!dynamicShell32->fpSHCreateShellItem		||
+			!dynamicShell32->fpSHParseDisplayName		||
+			!dynamicShell32->fpSHGetSpecialFolderPathW	
+			)
+			return FALSE;
+		else
+			return TRUE; 
 	}
 	return FALSE;
 }

